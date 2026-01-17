@@ -6,15 +6,29 @@ from backend.aggregator import Aggregator
 
 logger = logging.getLogger(__name__)
 
-# 數據源配置：(source_name, interval_seconds, offset_seconds)
+# 數據源配置 - 頻率設定依據各來源的 Rate Limit 政策
+# 
+# ┌────────────────┬──────────┬──────────┬─────────────────────────────────────────┐
+# │ 來源           │ 間隔     │ 偏移     │ 說明                                    │
+# ├────────────────┼──────────┼──────────┼─────────────────────────────────────────┤
+# │ Binance        │ 2s       │ 0s       │ API 限制 1200 req/min，每 2 秒安全     │
+# │ GoldPrice.org  │ 15s      │ 1s       │ 無官方 API，保守抓取避免封鎖           │
+# │ Sina Finance   │ 5s       │ 0.5s     │ 公開接口，5 秒合理                      │
+# │ BullionVault   │ 10s      │ 2s       │ 官方 XML API，10 秒合適                │
+# │ Yahoo Finance  │ 60s      │ 5s       │ 非官方使用，60 秒避免封鎖              │
+# │ Kitco          │ 60s      │ 10s      │ HTML 爬蟲，需保守 (60 秒以上)          │
+# │ Investing.com  │ 120s     │ 15s      │ Cloudflare 保護，建議 2 分鐘以上       │
+# │ Mock           │ 2s       │ 0s       │ 測試用                                  │
+# └────────────────┴──────────┴──────────┴─────────────────────────────────────────┘
+
 SOURCE_CONFIG = {
-    "Binance": {"interval": 1, "offset": 0},      # 每 1 秒，無偏移
-    "GoldPrice.org": {"interval": 10, "offset": 1},  # 每 10 秒，偏移 1 秒
-    "Sina Finance": {"interval": 3, "offset": 0.5},  # 每 3 秒，偏移 0.5 秒
-    "BullionVault": {"interval": 10, "offset": 2},   # 每 10 秒，偏移 2 秒
-    "Yahoo Finance": {"interval": 60, "offset": 5},  # 每 60 秒，偏移 5 秒
-    "Kitco": {"interval": 30, "offset": 3},          # 每 30 秒，偏移 3 秒
-    "Investing.com": {"interval": 20, "offset": 4},  # 每 20 秒，偏移 4 秒
+    "Binance": {"interval": 2, "offset": 0},       # Binance API 限制寬鬆，2 秒安全
+    "GoldPrice.org": {"interval": 15, "offset": 1},  # 保守避免封鎖
+    "Sina Finance": {"interval": 5, "offset": 0.5},  # 公開接口
+    "BullionVault": {"interval": 10, "offset": 2},   # 官方 XML API
+    "Yahoo Finance": {"interval": 60, "offset": 5},  # 非官方，保守
+    "Kitco": {"interval": 60, "offset": 10},         # HTML 爬蟲，保守
+    "Investing.com": {"interval": 120, "offset": 15}, # Cloudflare，非常保守
     "Mock A": {"interval": 2, "offset": 0},
     "Mock B": {"interval": 2, "offset": 0.5},
 }
