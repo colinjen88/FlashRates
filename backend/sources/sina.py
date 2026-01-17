@@ -1,8 +1,11 @@
 import aiohttp
-import time
 import re
+import logging
 from backend.sources.base import BaseSource
+from backend.http_client import get_text
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 class SinaFinanceSource(BaseSource):
     """
@@ -34,25 +37,26 @@ class SinaFinanceSource(BaseSource):
                 "Referer": "https://finance.sina.com.cn",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             }
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"{self.URL}{sina_symbol}",
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=5)
-                ) as response:
-                    if response.status != 200:
-                        return None
-                    
-                    text = await response.text(encoding='gbk')
-                    # 解析格式: var hq_str_hf_GC="...價格數據..."
-                    match = re.search(r'"([^"]+)"', text)
-                    if match:
-                        data = match.group(1).split(',')
-                        if len(data) > 0:
-                            # 通常第一個或第三個字段是價格
-                            price = float(data[0]) if data[0] else float(data[2]) if len(data) > 2 else None
-                            return price
-                    return None
+            status, text = await get_text(
+                f"{self.URL}{sina_symbol}",
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=5),
+                retries=2,
+                backoff=0.5,
+                encoding="gbk",
+            )
+            if status != 200:
+                return None
+            
+            # 解析格式: var hq_str_hf_GC="...價格數據..."
+            match = re.search(r'"([^"]+)"', text)
+            if match:
+                data = match.group(1).split(',')
+                if len(data) > 0:
+                    # 通常第一個或第三個字段是價格
+                    price = float(data[0]) if data[0] else float(data[2]) if len(data) > 2 else None
+                    return price
+            return None
         except Exception as e:
-            print(f"Error fetching Sina Finance: {e}")
+            logger.warning(f"Error fetching Sina Finance: {e}")
             return None

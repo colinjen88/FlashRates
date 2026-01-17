@@ -57,4 +57,24 @@ class RedisClient:
             await self.connect()
         await self.redis.publish(channel, message)
 
+    async def sismember(self, key, member):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.sismember(key, member)
+
+    async def smembers(self, key):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.smembers(key)
+
+    async def sadd(self, key, member):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.sadd(key, member)
+
+    async def srem(self, key, member):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.srem(key, member)
+
 redis_client = RedisClient()

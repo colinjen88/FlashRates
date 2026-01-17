@@ -1,7 +1,9 @@
 import time
+import logging
 from backend.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 class CircuitBreaker:
     def __init__(self, failure_threshold: int = settings.FAILURE_THRESHOLD, recovery_timeout: int = settings.RECOVERY_TIMEOUT):
@@ -16,7 +18,7 @@ class CircuitBreaker:
         self.last_failure_time[source_name] = time.time()
         
         if self.failures[source_name] >= self.failure_threshold:
-            print(f"Circuit Breaker: OPEN for {source_name}")
+            logger.warning(f"Circuit Breaker: OPEN for {source_name}")
             self.open_circuits.add(source_name)
 
     def record_success(self, source_name: str):
@@ -24,8 +26,8 @@ class CircuitBreaker:
             self.failures[source_name] = max(0, self.failures[source_name] - 1)
         
         if source_name in self.open_circuits and self.failures[source_name] == 0:
-             print(f"Circuit Breaker: CLOSED for {source_name}")
-             self.open_circuits.remove(source_name)
+            logger.info(f"Circuit Breaker: CLOSED for {source_name}")
+            self.open_circuits.remove(source_name)
 
     def is_available(self, source_name: str) -> bool:
         if source_name not in self.open_circuits:
@@ -37,7 +39,7 @@ class CircuitBreaker:
             # We don't remove from open_circuits yet, but return True to allow one check.
             # If logic requires explicit Half-Open state, can be added. 
             # For simplicity: Reset failure count effectively closing it on next success or reopening on fail.
-            print(f"Circuit Breaker: HALF-OPEN for {source_name}")
+            logger.info(f"Circuit Breaker: HALF-OPEN for {source_name}")
             self.failures[source_name] = self.failure_threshold - 1 # Give it one chance
             self.open_circuits.remove(source_name) 
             return True

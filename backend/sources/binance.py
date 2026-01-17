@@ -1,7 +1,10 @@
 import aiohttp
-import time
+import logging
 from backend.sources.base import BaseSource
+from backend.http_client import get_json
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 class BinanceSource(BaseSource):
     """
@@ -20,17 +23,17 @@ class BinanceSource(BaseSource):
             return None
             
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    self.URL,
-                    params={"symbol": "PAXGUSDT"},
-                    timeout=aiohttp.ClientTimeout(total=5)
-                ) as response:
-                    if response.status != 200:
-                        return None
-                    data = await response.json()
-                    # PAXG 價格約等於黃金盎司價格
-                    return float(data.get("price", 0))
+            status, data = await get_json(
+                self.URL,
+                params={"symbol": "PAXGUSDT"},
+                timeout=aiohttp.ClientTimeout(total=5),
+                retries=2,
+                backoff=0.4,
+            )
+            if status != 200:
+                return None
+            # PAXG 價格約等於黃金盎司價格
+            return float(data.get("price", 0))
         except Exception as e:
-            print(f"Error fetching Binance: {e}")
+            logger.warning(f"Error fetching Binance: {e}")
             return None

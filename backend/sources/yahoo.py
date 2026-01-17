@@ -1,7 +1,10 @@
 import aiohttp
-import time
+import logging
 from backend.sources.base import BaseSource
+from backend.http_client import get_json
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 class YahooFinanceSource(BaseSource):
     """
@@ -31,22 +34,22 @@ class YahooFinanceSource(BaseSource):
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             }
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"{self.URL}{yahoo_symbol}",
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=10)
-                ) as response:
-                    if response.status != 200:
-                        return None
-                    
-                    data = await response.json()
-                    result = data.get("chart", {}).get("result", [])
-                    if result:
-                        meta = result[0].get("meta", {})
-                        price = meta.get("regularMarketPrice")
-                        return float(price) if price else None
-                    return None
+            status, data = await get_json(
+                f"{self.URL}{yahoo_symbol}",
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=10),
+                retries=2,
+                backoff=0.7,
+            )
+            if status != 200:
+                return None
+            
+            result = data.get("chart", {}).get("result", [])
+            if result:
+                meta = result[0].get("meta", {})
+                price = meta.get("regularMarketPrice")
+                return float(price) if price else None
+            return None
         except Exception as e:
-            print(f"Error fetching Yahoo Finance: {e}")
+            logger.warning(f"Error fetching Yahoo Finance: {e}")
             return None

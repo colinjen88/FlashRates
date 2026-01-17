@@ -17,6 +17,14 @@ class Settings(BaseSettings):
     BINANCE_SECRET_KEY: str = ""
     OANDA_API_KEY: str = ""
     OANDA_ACCOUNT_ID: str = ""
+
+    # API Auth
+    API_KEYS: str = ""  # Comma separated API keys
+    ADMIN_API_KEYS: str = ""  # Comma separated admin keys
+
+    # Rate Limit
+    RATE_LIMIT_PER_MINUTE: int = 120
+    RATE_LIMIT_BURST: int = 30
     
     # Circuit Breaker Defaults
     FAILURE_THRESHOLD: int = 5

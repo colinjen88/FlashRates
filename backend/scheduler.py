@@ -3,6 +3,7 @@ from typing import List, Dict
 import logging
 from backend.sources.base import BaseSource
 from backend.aggregator import Aggregator
+from backend.metrics import record_source_failure, record_source_success
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,7 @@ class Scheduler:
         self.aggregator = aggregator
         self.running = False
         self.latest_results: Dict[str, Dict[str, Dict]] = {}  # symbol -> {source -> result}
+        self._tasks: List[asyncio.Task] = []
 
     async def _poll_source(self, source: BaseSource, symbol: str):
         """輪詢單一數據源"""
@@ -58,11 +60,16 @@ class Scheduler:
                         if symbol not in self.latest_results:
                             self.latest_results[symbol] = {}
                         self.latest_results[symbol][source.source_name] = result
+                        await record_source_success(source.source_name, result.get("latency", 0))
+                    else:
+                        self.aggregator.circuit_breaker.record_failure(source.source_name)
+                        await record_source_failure(source.source_name)
                 else:
                     logger.debug(f"Skipping {source.source_name} due to circuit breaker")
             except Exception as e:
                 logger.error(f"Error polling {source.source_name} for {symbol}: {e}")
                 self.aggregator.circuit_breaker.record_failure(source.source_name)
+                await record_source_failure(source.source_name)
             
             await asyncio.sleep(config["interval"])
 
@@ -92,11 +99,17 @@ class Scheduler:
         tasks.append(asyncio.create_task(self._aggregate_loop(symbols)))
         
         # 等待所有任務
+        self._tasks = tasks
         try:
             await asyncio.gather(*tasks)
         except asyncio.CancelledError:
             logger.info("Scheduler tasks cancelled")
 
-    def stop(self):
+    async def stop(self):
         self.running = False
+        for task in list(self._tasks):
+            task.cancel()
+        if self._tasks:
+            await asyncio.gather(*self._tasks, return_exceptions=True)
+        self._tasks = []
         logger.info("Scheduler stopping...")

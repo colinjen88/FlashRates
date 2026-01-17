@@ -6,7 +6,7 @@
 
 **即時監控黃金 (XAU)、白銀 (XAG) 與美元匯率 (USD/TWD) 的高頻數據聚合平台。**
 
-採用「分散式採集、中心化聚合」模式，從 8 個異構數據源同步抓取報價，實現亞秒級更新。
+採用「分散式採集、中心化聚合」模式，從 10 個異構數據源同步抓取報價，實現亞秒級更新。
 
 ---
 
@@ -105,12 +105,13 @@ npm run dev
 
 ### 訪問地址
 
-| 服務 | URL | 說明 |
-|------|-----|------|
-| 前端儀表板 | http://localhost:7000 | 即時監控介面 |
-| 後端 API | http://localhost:8000 | REST API |
-| WebSocket | ws://localhost:8000/ws/stream | 實時數據推送 |
-| API 文檔 | http://localhost:8000/docs | Swagger UI |
+| 服務       | URL                                  | 說明         |
+| ---------- | ------------------------------------ | ------------ |
+| 前端儀表板 | http://localhost:7000                | 即時監控介面 |
+| 後端 API   | http://localhost:8000                | REST API     |
+| WebSocket  | ws://localhost:8000/ws/stream        | 實時數據推送 |
+| Metrics    | http://localhost:8000/api/v1/metrics | 服務監控指標 |
+| API 文檔   | http://localhost:8000/docs           | Swagger UI   |
 
 ---
 
@@ -162,12 +163,37 @@ FlashRates/
 
 獲取最新匯率數據。
 
+**認證方式：**
+
+- Header: `X-API-Key: <YOUR_API_KEY>`
+- 或 `Authorization: Bearer <YOUR_API_KEY>`
+  > 若未設定 `API_KEYS`，則不強制驗證（開發環境預設）。
+
+**頻率限制：**
+
+- 預設每分鐘 120 次 + 30 次突發額度（可在環境變數調整）
+
+### API Key 管理
+
+提供本機產生工具，快速建立多組 API Key：
+
+```
+python backend/tools/api_key_tool.py --count 3 --length 32 --prefix fr_
+```
+
+輸出結果會包含建議的 `.env` 設定行：
+
+```
+API_KEYS=fr_xxx,fr_yyy,fr_zzz
+```
+
 **請求參數：**
 | 參數 | 類型 | 說明 |
 |------|------|------|
 | symbols | string | 逗號分隔的代碼 (例: `xau-usd,xag-usd,usd-twd`) |
 
 **回應範例：**
+
 ```json
 {
   "timestamp": 1705500000.123,
@@ -191,7 +217,13 @@ FlashRates/
 
 訂閱實時價格更新。連線後自動推送所有資產的更新。
 
+**認證方式：**
+
+- Query: `ws://localhost:8000/ws/stream?api_key=<YOUR_API_KEY>`
+- 或在 Header 帶 `X-API-Key`
+
 **推送訊息格式：**
+
 ```json
 {
   "symbol": "XAU-USD",
@@ -204,20 +236,92 @@ FlashRates/
 }
 ```
 
+### Metrics
+
+#### `GET /api/v1/metrics`
+
+回傳服務運行指標（來源成功/失敗、平均延遲、聚合次數等）。
+
+**回應範例：**
+
+```json
+{
+  "startTime": 1705500000.0,
+  "uptimeSeconds": 120.5,
+  "totals": {
+    "sourceSuccess": 1200,
+    "sourceFailure": 12,
+    "aggregateSuccess": 360
+  },
+  "sources": {
+    "Binance": { "success": 300, "failure": 2, "avgLatencyMs": 42.1 }
+  },
+  "aggregates": {
+    "XAU-USD": { "count": 120, "avgLatencyMs": 160.3, "lastSources": 6 }
+  }
+}
+```
+
+### 管理端 (Admin)
+
+**認證方式：**
+
+- Header: `X-API-Key: <ADMIN_API_KEY>`
+
+#### `GET /api/v1/admin/keys`
+
+列出所有 API Key 及其停用狀態。
+
+> Redis 新增/移除的 key 只在本次服務期間生效；請同步到 `.env` 並重啟以持久化。
+
+#### `POST /api/v1/admin/keys/disable`
+
+停用指定 API Key。
+
+```json
+{ "key": "fr_xxx" }
+```
+
+#### `POST /api/v1/admin/keys/enable`
+
+啟用指定 API Key。
+
+```json
+{ "key": "fr_xxx" }
+```
+
+#### `POST /api/v1/admin/keys/add`
+
+新增 API Key（寫入 Redis）。
+
+```json
+{ "key": "fr_xxx" }
+```
+
+#### `POST /api/v1/admin/keys/remove`
+
+移除 Redis 內的 API Key（`.env` 內的 key 需手動移除並重啟）。
+
+```json
+{ "key": "fr_xxx" }
+```
+
 ---
 
 ## 📊 數據源配置
 
-| 來源 | 類型 | 輪詢間隔 | 偏移量 | 權重 | 支援資產 |
-|------|------|---------|--------|------|---------|
-| **Binance** | Crypto API | 1s | 0s | 0.8 | XAU |
-| **GoldPrice.org** | JSON API | 10s | 1s | 0.6 | XAU, XAG |
-| **新浪財經** | HTTP | 3s | 0.5s | 0.6 | XAU, XAG, USD-TWD |
-| **BullionVault** | XML API | 10s | 2s | 0.7 | XAU |
-| **Yahoo Finance** | REST API | 60s | 5s | 0.5 | XAU, XAG, USD-TWD |
-| **Kitco** | HTML 爬蟲 | 30s | 3s | 0.4 | XAU, XAG |
-| **Investing.com** | Playwright | 20s | 4s | 0.5 | XAU, XAG |
-| **Mock** | 測試 | 2s | 0s | 0.3 | 全部 |
+| 來源              | 類型       | 輪詢間隔 | 偏移量 | 權重 | 支援資產          |
+| ----------------- | ---------- | -------- | ------ | ---- | ----------------- |
+| **Binance**       | Crypto API | 2s       | 0s     | 0.8  | XAU               |
+| **GoldPrice.org** | JSON API   | 15s      | 1s     | 0.6  | XAU, XAG          |
+| **新浪財經**      | HTTP       | 5s       | 0.5s   | 0.6  | XAU, XAG, USD-TWD |
+| **BullionVault**  | XML API    | 10s      | 2s     | 0.7  | XAU               |
+| **Yahoo Finance** | REST API   | 60s      | 5s     | 0.5  | XAU, XAG, USD-TWD |
+| **Kitco**         | HTML 爬蟲  | 60s      | 10s    | 0.4  | XAU, XAG          |
+| **Investing.com** | Playwright | 120s     | 15s    | 0.5  | XAU, XAG, USD-TWD |
+| **OANDA**         | REST API   | 5s       | 3s     | 0.8  | XAU, XAG, USD-TWD |
+| **Taiwan Bank**   | CSV        | 60s      | 20s    | 0.7  | USD-TWD           |
+| **Mock**          | 測試       | 2s       | 0s     | 0.3  | 全部              |
 
 ### 時間分片說明
 
@@ -248,7 +352,8 @@ T=5.0s: Yahoo Finance 請求
 2. **來源歸因顯示**
    - 顯示當前價格由哪個來源貢獻
    - 顯示平均延遲 (ms)
-   - 8 格進度條顯示活躍來源數量
+
+- 10 格進度條顯示活躍來源數量
 
 3. **連線狀態指示**
    - 綠燈：WebSocket 已連接
@@ -276,6 +381,14 @@ REDIS_PASSWORD=
 # 應用配置
 APP_NAME=FlashRates Aggregator
 DEBUG=false
+
+# API 認證
+API_KEYS=dev-key-1,dev-key-2
+ADMIN_API_KEYS=admin-key-1
+
+# Rate Limit (每分鐘 + 突發)
+RATE_LIMIT_PER_MINUTE=120
+RATE_LIMIT_BURST=30
 ```
 
 ### Vite 配置 (`frontend/vite.config.js`)
@@ -284,9 +397,9 @@ DEBUG=false
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    port: 7000,  // 前端固定使用 Port 7000
+    port: 7000, // 前端固定使用 Port 7000
   },
-})
+});
 ```
 
 ---
@@ -309,22 +422,22 @@ python -m pytest tests/test_system.py -v
 
 ### 核心類別
 
-| 類別 | 檔案 | 職責 |
-|------|------|------|
-| `BaseSource` | `sources/base.py` | 數據源抽象基類 |
-| `Aggregator` | `aggregator.py` | 加權平均 + 異常值過濾 |
-| `Scheduler` | `scheduler.py` | 時間分片調度 |
-| `CircuitBreaker` | `circuit_breaker.py` | 熔斷機制 |
-| `RedisClient` | `redis_client.py` | Redis 操作封裝 |
+| 類別             | 檔案                 | 職責                  |
+| ---------------- | -------------------- | --------------------- |
+| `BaseSource`     | `sources/base.py`    | 數據源抽象基類        |
+| `Aggregator`     | `aggregator.py`      | 加權平均 + 異常值過濾 |
+| `Scheduler`      | `scheduler.py`       | 時間分片調度          |
+| `CircuitBreaker` | `circuit_breaker.py` | 熔斷機制              |
+| `RedisClient`    | `redis_client.py`    | Redis 操作封裝        |
 
 ---
 
 ## 📜 版本歷史
 
-| 版本 | 日期 | 說明 |
-|------|------|------|
+| 版本 | 日期       | 說明                  |
+| ---- | ---------- | --------------------- |
 | v2.0 | 2026-01-17 | 完整實作 8 源聚合系統 |
-| v1.0 | - | 原始規格設計 |
+| v1.0 | -          | 原始規格設計          |
 
 ---
 

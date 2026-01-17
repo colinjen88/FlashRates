@@ -1,7 +1,11 @@
 import aiohttp
 import xml.etree.ElementTree as ET
+import logging
 from backend.sources.base import BaseSource
+from backend.http_client import get_text
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 class BullionVaultSource(BaseSource):
     URL = "https://live.bullionvault.com/secure/api/v2/view_market_xml.do"
@@ -37,24 +41,27 @@ class BullionVaultSource(BaseSource):
              return None # Not supported
 
         try:
-            async with aiohttp.ClientSession() as session:
-                 async with session.get(self.URL, timeout=5) as response:
-                    if response.status != 200:
-                        return None
-                    content = await response.text()
-                    
-                    root = ET.fromstring(content)
-                    # Iterate pitches
-                    for pitch in root.findall(".//pitch"):
-                        sec_class = pitch.get("securityClass")
-                        currency = pitch.get("currency")
-                        
-                        if sec_class and security_class_substr in sec_class and currency == "USD":
-                            sell_price = pitch.get("sellPrice")
-                            if sell_price:
-                                return float(sell_price)
-                    
-                    return None
+            status, content = await get_text(
+                self.URL,
+                timeout=aiohttp.ClientTimeout(total=5),
+                retries=2,
+                backoff=0.6,
+            )
+            if status != 200:
+                return None
+            
+            root = ET.fromstring(content)
+            # Iterate pitches
+            for pitch in root.findall(".//pitch"):
+                sec_class = pitch.get("securityClass")
+                currency = pitch.get("currency")
+                
+                if sec_class and security_class_substr in sec_class and currency == "USD":
+                    sell_price = pitch.get("sellPrice")
+                    if sell_price:
+                        return float(sell_price)
+            
+            return None
         except Exception as e:
-            print(f"Error fetching BullionVault: {e}")
+            logger.warning(f"Error fetching BullionVault: {e}")
             return None

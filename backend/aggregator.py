@@ -4,6 +4,7 @@ from typing import List, Dict, Optional
 from backend.sources.base import BaseSource
 from backend.circuit_breaker import CircuitBreaker
 from backend.redis_client import redis_client
+from backend.metrics import record_aggregate
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,9 @@ class Aggregator:
                 continue
             
             src_name = res['source']
-            price = res['price']
+            price = res.get('price')
+            if price is None or price <= 0:
+                continue
             
             # Circuit Breaker 記錄成功
             self.circuit_breaker.record_success(src_name)
@@ -37,7 +40,8 @@ class Aggregator:
                 "source": src_name,
                 "price": price,
                 "weight": weight,
-                "latency": res.get('latency', 0)
+                "latency": res.get('latency', 0),
+                "timestamp": res.get('timestamp')
             })
 
         if not valid_entries:
@@ -75,11 +79,15 @@ class Aggregator:
         # 計算平均延遲
         avg_latency = statistics.mean([e['latency'] for e in valid_entries]) if valid_entries else 0
 
+        # 使用最新來源時間作為聚合時間
+        source_timestamps = [e.get('timestamp') for e in valid_entries if e.get('timestamp')]
+        latest_source_ts = max(source_timestamps) if source_timestamps else None
+
         import time
         output = {
             "symbol": symbol,
             "price": round(final_price, 2),
-            "timestamp": time.time(),
+            "timestamp": latest_source_ts or time.time(),
             "sources": len(valid_entries),
             "details": sources_used,
             "fastest": fastest_source,
@@ -90,6 +98,8 @@ class Aggregator:
         output_json = json.dumps(output)
         await redis_client.publish(f"market:stream:{symbol}", output_json)
         await redis_client.set(f"market:latest:{symbol}", output_json)
+
+        await record_aggregate(symbol, len(valid_entries), avg_latency)
         
         logger.info(f"{symbol}: {final_price:.2f} from {len(valid_entries)} sources (fastest: {fastest_source})")
         

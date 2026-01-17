@@ -1,7 +1,11 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Depends, HTTPException
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from backend.config import get_settings
 from backend.redis_client import redis_client
+from backend.http_client import close_session
+from backend.metrics import get_metrics_snapshot
+from backend.auth import verify_api_key, verify_ws_api_key, verify_admin_api_key
 import logging
 import asyncio
 
@@ -34,6 +38,7 @@ from backend.aggregator import Aggregator
 from backend.scheduler import Scheduler
 
 scheduler = None
+scheduler_task = None
 investing_source = None  # 需要在 shutdown 時清理
 
 @app.on_event("startup")
@@ -59,22 +64,29 @@ async def startup_event():
     
     aggregator = Aggregator(sources)
     
-    global scheduler
+    global scheduler, scheduler_task
     scheduler = Scheduler(sources, aggregator)
     
     # 在後台運行 scheduler
-    asyncio.create_task(scheduler.run(symbols=["XAU-USD", "XAG-USD", "USD-TWD"]))
+    scheduler_task = asyncio.create_task(scheduler.run(symbols=["XAU-USD", "XAG-USD", "USD-TWD"]))
     
     logger.info(f"Application started with {len(sources)} data sources")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     if scheduler:
-        scheduler.stop()
+        await scheduler.stop()
+    if scheduler_task:
+        scheduler_task.cancel()
+        try:
+            await scheduler_task
+        except asyncio.CancelledError:
+            pass
     # 清理 Investing.com 瀏覽器
     if investing_source:
         await investing_source.cleanup()
     await redis_client.close()
+    await close_session()
     logger.info("Application shutdown")
 
 @app.get("/")
@@ -82,7 +94,7 @@ async def root():
     return {"status": "ok", "app": settings.APP_NAME, "sources": 10}
 
 @app.get("/api/v1/latest")
-async def get_latest(symbols: str = "xau-usd,xag-usd,usd-twd"):
+async def get_latest(symbols: str = "xau-usd,xag-usd,usd-twd", api_key: str = Depends(verify_api_key)):
     """獲取最新匯率數據"""
     import json
     result = {}
@@ -93,8 +105,82 @@ async def get_latest(symbols: str = "xau-usd,xag-usd,usd-twd"):
             result[symbol] = json.loads(data)
     return {"timestamp": __import__('time').time(), "data": result}
 
+
+@app.get("/api/v1/metrics")
+async def get_metrics(api_key: str = Depends(verify_api_key)):
+    return await get_metrics_snapshot()
+
+
+class AdminKeyPayload(BaseModel):
+    key: str
+
+
+@app.get("/api/v1/admin/keys")
+async def list_keys(admin_key: str = Depends(verify_admin_api_key)):
+    disabled = await redis_client.smembers("auth:disabled_keys")
+    allowed = [k.strip() for k in settings.API_KEYS.split(",") if k.strip()]
+    dynamic = list(await redis_client.smembers("auth:dynamic_keys"))
+    return {
+        "keys": [
+            {"key": k, "disabled": k in disabled, "source": "env"}
+            for k in allowed
+        ] + [
+            {"key": k, "disabled": k in disabled, "source": "redis"}
+            for k in dynamic if k not in allowed
+        ],
+        "note": "Redis 新增/移除的 key 需同步到 .env 並重啟才會持久化。"
+    }
+
+
+@app.post("/api/v1/admin/keys/disable")
+async def disable_key(payload: AdminKeyPayload, admin_key: str = Depends(verify_admin_api_key)):
+    await redis_client.sadd("auth:disabled_keys", payload.key)
+    return {"key": payload.key, "disabled": True}
+
+
+@app.post("/api/v1/admin/keys/enable")
+async def enable_key(payload: AdminKeyPayload, admin_key: str = Depends(verify_admin_api_key)):
+    await redis_client.srem("auth:disabled_keys", payload.key)
+    return {"key": payload.key, "disabled": False}
+
+
+@app.post("/api/v1/admin/keys/add")
+async def add_key(payload: AdminKeyPayload, admin_key: str = Depends(verify_admin_api_key)):
+    key = payload.key.strip()
+    if not key:
+        raise HTTPException(status_code=400, detail="Key required")
+    allowed = {k.strip() for k in settings.API_KEYS.split(",") if k.strip()}
+    if key in allowed:
+        return {"key": key, "source": "env", "note": "Key already exists in .env"}
+    await redis_client.sadd("auth:dynamic_keys", key)
+    return {
+        "key": key,
+        "source": "redis",
+        "note": "請同步到 .env 並重啟以持久化"
+    }
+
+
+@app.post("/api/v1/admin/keys/remove")
+async def remove_key(payload: AdminKeyPayload, admin_key: str = Depends(verify_admin_api_key)):
+    key = payload.key.strip()
+    if not key:
+        raise HTTPException(status_code=400, detail="Key required")
+    allowed = {k.strip() for k in settings.API_KEYS.split(",") if k.strip()}
+    if key in allowed:
+        raise HTTPException(status_code=400, detail="Key is from .env; remove it there and restart")
+    await redis_client.srem("auth:dynamic_keys", key)
+    await redis_client.srem("auth:disabled_keys", key)
+    return {
+        "key": key,
+        "source": "redis",
+        "note": "已從 Redis 移除；如需永久移除請同步 .env 並重啟"
+    }
+
 @app.websocket("/ws/stream")
 async def websocket_endpoint(websocket: WebSocket):
+    api_key = await verify_ws_api_key(websocket)
+    if api_key is None:
+        return
     await websocket.accept()
     pubsub = redis_client.redis.pubsub()
     await pubsub.subscribe("market:stream:XAU-USD", "market:stream:XAG-USD", "market:stream:USD-TWD")

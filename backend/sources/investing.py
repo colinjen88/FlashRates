@@ -1,7 +1,6 @@
 import asyncio
 import time
 import random
-from playwright.async_api import async_playwright
 from backend.sources.base import BaseSource
 from typing import Optional
 import logging
@@ -34,14 +33,22 @@ class InvestingSource(BaseSource):
         self.context = None
         self.page = None
         self._lock = asyncio.Lock()
+        self._playwright = None
+        self.disabled = False
 
     async def _init_browser(self):
         """初始化瀏覽器並注入 stealth 腳本"""
         try:
+            from playwright.async_api import async_playwright
             from playwright_stealth import stealth_async
-            
-            playwright = await async_playwright().start()
-            self.browser = await playwright.chromium.launch(
+        except Exception as e:
+            logger.warning(f"Investing.com dependencies missing: {e}")
+            self.disabled = True
+            return
+
+        try:
+            self._playwright = await async_playwright().start()
+            self.browser = await self._playwright.chromium.launch(
                 headless=True,
                 args=[
                     '--disable-blink-features=AutomationControlled',
@@ -69,6 +76,7 @@ class InvestingSource(BaseSource):
         except Exception as e:
             logger.error(f"Failed to initialize Investing.com browser: {e}")
             self.browser = None
+            self._playwright = None
 
     async def _ensure_browser(self):
         """確保瀏覽器已初始化"""
@@ -76,6 +84,8 @@ class InvestingSource(BaseSource):
             await self._init_browser()
 
     async def fetch_price(self, symbol: str) -> Optional[float]:
+        if self.disabled:
+            return None
         target_url = self.URLS.get(symbol)
         if not target_url:
             return None
@@ -124,3 +134,6 @@ class InvestingSource(BaseSource):
             await self.browser.close()
             self.browser = None
             self.page = None
+        if self._playwright:
+            await self._playwright.stop()
+            self._playwright = None

@@ -1,8 +1,11 @@
 import aiohttp
-import time
 import re
+import logging
 from backend.sources.base import BaseSource
+from backend.http_client import get_text
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 class KitcoSource(BaseSource):
     """
@@ -24,36 +27,36 @@ class KitcoSource(BaseSource):
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             }
-            async with aiohttp.ClientSession() as session:
-                url = self.URL if "XAU" in symbol else "https://www.kitco.com/silver-price-today-usa/"
-                async with session.get(
-                    url,
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=10)
-                ) as response:
-                    if response.status != 200:
-                        return None
-                    
-                    html = await response.text()
-                    # 簡單的正則匹配價格 (實際需要根據頁面結構調整)
-                    pattern = r'data-price="([\d,\.]+)"'
-                    match = re.search(pattern, html)
-                    if match:
-                        price_str = match.group(1).replace(',', '')
-                        return float(price_str)
-                    
-                    # 嘗試其他模式
-                    pattern2 = r'\$\s*([\d,]+\.\d{2})'
-                    matches = re.findall(pattern2, html)
-                    if matches:
-                        # 返回第一個合理的價格 (黃金通常 > 1000)
-                        for m in matches:
-                            price = float(m.replace(',', ''))
-                            if "XAU" in symbol and price > 1000:
-                                return price
-                            elif "XAG" in symbol and price < 100:
-                                return price
-                    return None
+            url = self.URL if "XAU" in symbol else "https://www.kitco.com/silver-price-today-usa/"
+            status, html = await get_text(
+                url,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=10),
+                retries=2,
+                backoff=0.8,
+            )
+            if status != 200:
+                return None
+            
+            # 簡單的正則匹配價格 (實際需要根據頁面結構調整)
+            pattern = r'data-price="([\d,\.]+)"'
+            match = re.search(pattern, html)
+            if match:
+                price_str = match.group(1).replace(',', '')
+                return float(price_str)
+            
+            # 嘗試其他模式
+            pattern2 = r'\$\s*([\d,]+\.\d{2})'
+            matches = re.findall(pattern2, html)
+            if matches:
+                # 返回第一個合理的價格 (黃金通常 > 1000)
+                for m in matches:
+                    price = float(m.replace(',', ''))
+                    if "XAU" in symbol and price > 1000:
+                        return price
+                    elif "XAG" in symbol and price < 100:
+                        return price
+            return None
         except Exception as e:
-            print(f"Error fetching Kitco: {e}")
+            logger.warning(f"Error fetching Kitco: {e}")
             return None
