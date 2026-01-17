@@ -37,6 +37,8 @@ SOURCE_CONFIG = {
     "Mock": {"interval": 2, "offset": 0},            # 測試用
     "exchangerate.host": {"interval": 30, "offset": 12},
     "open.er-api.com": {"interval": 60, "offset": 25},
+    "Fawaz API": {"interval": 3600, "offset": 30},   # CDN 更新較慢 (每小時)
+    "FloatRates": {"interval": 3600, "offset": 45},  # 每日更新 (每小時候polling即可)
 }
 
 class Scheduler:

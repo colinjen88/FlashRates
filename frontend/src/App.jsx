@@ -32,6 +32,9 @@ const MOCK_SOURCES = [
   { name: "Yahoo Finance", delay: "320ms", trusted: true, type: "API" },
   { name: "Sina Finance", delay: "150ms", trusted: false, type: "Http" },
   { name: "OANDA (Demo)", delay: "90ms", trusted: true, type: "Stream" },
+  { name: "exchangerate.host", delay: "200ms", trusted: true, type: "API" },
+  { name: "Fawaz API", delay: "450ms", trusted: true, type: "CDN" },
+  { name: "FloatRates", delay: "500ms", trusted: true, type: "Feed" },
 ];
 
 const CODE_EXAMPLES = {
@@ -282,7 +285,7 @@ const DashboardSection = () => {
   const supportedCounts = {
     "XAU-USD": 8,
     "XAG-USD": 7,
-    "USD-TWD": 8,
+    "USD-TWD": 12, // 增加到 12 個來源
   };
 
   useEffect(() => {

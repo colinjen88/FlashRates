@@ -35,6 +35,8 @@ from backend.sources.oanda import OandaSource
 from backend.sources.taiwanbank import TaiwanBankSource
 from backend.sources.exchangerate_host import ExchangerateHostSource
 from backend.sources.open_er_api import OpenErApiSource
+from backend.sources.fawazahmed import FawazahmedSource
+from backend.sources.floatrates import FloatRatesSource
 from backend.sources.mock import MockSource
 from backend.aggregator import Aggregator
 from backend.scheduler import Scheduler
@@ -50,7 +52,7 @@ async def startup_event():
     global investing_source
     investing_source = InvestingSource()
     
-    # 初始化所有 10 個數據源 (超規格配置)
+    # 初始化所有 12 個數據源 (超規格配置)
     sources = [
         BinanceSource(),           # 1. Binance PAXG (高頻，黃金)
         GoldPriceOrgSource(),      # 2. GoldPrice.org (黃金、白銀)
@@ -63,7 +65,9 @@ async def startup_event():
         TaiwanBankSource(),        # 9. 台灣銀行 (USD-TWD 官方備援)
         ExchangerateHostSource(),  # 10. exchangerate.host (USD-TWD)
         OpenErApiSource(),         # 11. open.er-api.com (USD-TWD)
-        MockSource(name="Mock"),   # 12. Mock (測試用)
+        FawazahmedSource(),        # 12. Fawaz API (USD-TWD CDN)
+        FloatRatesSource(),        # 13. FloatRates (USD-TWD)
+        MockSource(name="Mock"),   # 14. Mock (測試用)
     ]
     
     aggregator = Aggregator(sources)
@@ -95,7 +99,7 @@ async def shutdown_event():
 
 @app.get("/")
 async def root():
-    return {"status": "ok", "app": settings.APP_NAME, "sources": 10}
+    return {"status": "ok", "app": settings.APP_NAME, "sources": 14}
 
 @app.get("/api/v1/latest")
 async def get_latest(symbols: str = "xau-usd,xag-usd,usd-twd", api_key: str = Depends(verify_api_key)):
