@@ -26,28 +26,35 @@ from backend.sources.sina import SinaFinanceSource
 from backend.sources.bullionvault import BullionVaultSource
 from backend.sources.yahoo import YahooFinanceSource
 from backend.sources.kitco import KitcoSource
-# from backend.sources.investing import InvestingSource  # Playwright 需要特殊處理
+from backend.sources.investing import InvestingSource
+from backend.sources.oanda import OandaSource
+from backend.sources.taiwanbank import TaiwanBankSource
 from backend.sources.mock import MockSource
 from backend.aggregator import Aggregator
 from backend.scheduler import Scheduler
 
 scheduler = None
+investing_source = None  # 需要在 shutdown 時清理
 
 @app.on_event("startup")
 async def startup_event():
     await redis_client.connect()
     
-    # 初始化所有 8 個數據源
+    global investing_source
+    investing_source = InvestingSource()
+    
+    # 初始化所有 10 個數據源 (超規格配置)
     sources = [
-        BinanceSource(),           # 1. Binance PAXG (高頻)
-        GoldPriceOrgSource(),      # 2. GoldPrice.org
-        SinaFinanceSource(),       # 3. 新浪財經
-        BullionVaultSource(),      # 4. BullionVault
-        YahooFinanceSource(),      # 5. Yahoo Finance
-        KitcoSource(),             # 6. Kitco
-        # InvestingSource(),       # 7. Investing.com (需要 Playwright)
-        MockSource(name="Mock A"), # 7. Mock 替代
-        MockSource(name="Mock B"), # 8. Mock 替代
+        BinanceSource(),           # 1. Binance PAXG (高頻，黃金)
+        GoldPriceOrgSource(),      # 2. GoldPrice.org (黃金、白銀)
+        SinaFinanceSource(),       # 3. 新浪財經 (全部)
+        BullionVaultSource(),      # 4. BullionVault (黃金)
+        YahooFinanceSource(),      # 5. Yahoo Finance (全部)
+        KitcoSource(),             # 6. Kitco (黃金、白銀)
+        investing_source,          # 7. Investing.com (全部，Playwright)
+        OandaSource(),             # 8. OANDA (外匯)
+        TaiwanBankSource(),        # 9. 台灣銀行 (USD-TWD 官方備援)
+        MockSource(name="Mock"),   # 10. Mock (測試用)
     ]
     
     aggregator = Aggregator(sources)
@@ -64,12 +71,15 @@ async def startup_event():
 async def shutdown_event():
     if scheduler:
         scheduler.stop()
+    # 清理 Investing.com 瀏覽器
+    if investing_source:
+        await investing_source.cleanup()
     await redis_client.close()
     logger.info("Application shutdown")
 
 @app.get("/")
 async def root():
-    return {"status": "ok", "app": settings.APP_NAME, "sources": 8}
+    return {"status": "ok", "app": settings.APP_NAME, "sources": 10}
 
 @app.get("/api/v1/latest")
 async def get_latest(symbols: str = "xau-usd,xag-usd,usd-twd"):

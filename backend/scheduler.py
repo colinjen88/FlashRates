@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 # │ Yahoo Finance  │ 60s      │ 5s       │ 非官方使用，60 秒避免封鎖              │
 # │ Kitco          │ 60s      │ 10s      │ HTML 爬蟲，需保守 (60 秒以上)          │
 # │ Investing.com  │ 120s     │ 15s      │ Cloudflare 保護，建議 2 分鐘以上       │
+# │ OANDA          │ 5s       │ 3s       │ Demo API，5 秒合適                      │
+# │ Taiwan Bank    │ 60s      │ 20s      │ 官方牌告，60 秒足夠                     │
 # │ Mock           │ 2s       │ 0s       │ 測試用                                  │
 # └────────────────┴──────────┴──────────┴─────────────────────────────────────────┘
 
@@ -29,8 +31,9 @@ SOURCE_CONFIG = {
     "Yahoo Finance": {"interval": 60, "offset": 5},  # 非官方，保守
     "Kitco": {"interval": 60, "offset": 10},         # HTML 爬蟲，保守
     "Investing.com": {"interval": 120, "offset": 15}, # Cloudflare，非常保守
-    "Mock A": {"interval": 2, "offset": 0},
-    "Mock B": {"interval": 2, "offset": 0.5},
+    "OANDA": {"interval": 5, "offset": 3},           # Demo API
+    "Taiwan Bank": {"interval": 60, "offset": 20},   # 官方牌告
+    "Mock": {"interval": 2, "offset": 0},            # 測試用
 }
 
 class Scheduler:

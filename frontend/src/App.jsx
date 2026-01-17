@@ -195,10 +195,10 @@ const AssetCard = ({ name, symbol, price, prevPrice, timestamp, source, fastest,
         <div className="mt-auto">
           <div className="flex justify-between items-center text-[9px] text-slate-500 uppercase tracking-wider font-semibold mb-1.5">
             <span>資料來源</span>
-            <span>{hasData ? `${sourcesCount || 0}/8` : '-/8'}</span>
+            <span>{hasData ? `${sourcesCount || 0}/10` : '-/10'}</span>
           </div>
-          <div className="grid grid-cols-4 gap-1">
-            {[...Array(8)].map((_, idx) => (
+          <div className="grid grid-cols-5 gap-1">
+            {[...Array(10)].map((_, idx) => (
                <div key={idx} className={`h-0.5 rounded-full transition-all duration-500 ${idx < (sourcesCount || 0) ? 'bg-emerald-400' : 'bg-slate-700'}`}></div>
             ))}
           </div>
