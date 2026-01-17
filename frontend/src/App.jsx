@@ -282,7 +282,7 @@ const DashboardSection = () => {
   const supportedCounts = {
     "XAU-USD": 8,
     "XAG-USD": 7,
-    "USD-TWD": 6,
+    "USD-TWD": 8,
   };
 
   useEffect(() => {

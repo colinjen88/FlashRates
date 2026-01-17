@@ -33,6 +33,8 @@ from backend.sources.kitco import KitcoSource
 from backend.sources.investing import InvestingSource
 from backend.sources.oanda import OandaSource
 from backend.sources.taiwanbank import TaiwanBankSource
+from backend.sources.exchangerate_host import ExchangerateHostSource
+from backend.sources.open_er_api import OpenErApiSource
 from backend.sources.mock import MockSource
 from backend.aggregator import Aggregator
 from backend.scheduler import Scheduler
@@ -59,7 +61,9 @@ async def startup_event():
         investing_source,          # 7. Investing.com (全部，Playwright)
         OandaSource(),             # 8. OANDA (外匯)
         TaiwanBankSource(),        # 9. 台灣銀行 (USD-TWD 官方備援)
-        MockSource(name="Mock"),   # 10. Mock (測試用)
+        ExchangerateHostSource(),  # 10. exchangerate.host (USD-TWD)
+        OpenErApiSource(),         # 11. open.er-api.com (USD-TWD)
+        MockSource(name="Mock"),   # 12. Mock (測試用)
     ]
     
     aggregator = Aggregator(sources)

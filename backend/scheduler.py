@@ -35,6 +35,8 @@ SOURCE_CONFIG = {
     "OANDA": {"interval": 5, "offset": 3},           # Demo API
     "Taiwan Bank": {"interval": 60, "offset": 20},   # 官方牌告
     "Mock": {"interval": 2, "offset": 0},            # 測試用
+    "exchangerate.host": {"interval": 30, "offset": 12},
+    "open.er-api.com": {"interval": 60, "offset": 25},
 }
 
 class Scheduler:

@@ -310,18 +310,30 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 
 ## 📊 數據源配置
 
-| 來源              | 類型       | 輪詢間隔 | 偏移量 | 權重 | 支援資產          |
-| ----------------- | ---------- | -------- | ------ | ---- | ----------------- |
-| **Binance**       | Crypto API | 2s       | 0s     | 0.8  | XAU               |
-| **GoldPrice.org** | JSON API   | 15s      | 1s     | 0.6  | XAU, XAG          |
-| **新浪財經**      | HTTP       | 5s       | 0.5s   | 0.6  | XAU, XAG, USD-TWD |
-| **BullionVault**  | XML API    | 10s      | 2s     | 0.7  | XAU               |
-| **Yahoo Finance** | REST API   | 60s      | 5s     | 0.5  | XAU, XAG, USD-TWD |
-| **Kitco**         | HTML 爬蟲  | 60s      | 10s    | 0.4  | XAU, XAG          |
-| **Investing.com** | Playwright | 120s     | 15s    | 0.5  | XAU, XAG, USD-TWD |
-| **OANDA**         | REST API   | 5s       | 3s     | 0.8  | XAU, XAG, USD-TWD |
-| **Taiwan Bank**   | CSV        | 60s      | 20s    | 0.7  | USD-TWD           |
-| **Mock**          | 測試       | 2s       | 0s     | 0.3  | 全部              |
+| 來源                  | 類型       | 輪詢間隔 | 偏移量 | 權重 | 支援資產          |
+| --------------------- | ---------- | -------- | ------ | ---- | ----------------- |
+| **Binance**           | Crypto API | 2s       | 0s     | 0.8  | XAU               |
+| **GoldPrice.org**     | JSON API   | 15s      | 1s     | 0.6  | XAU, XAG          |
+| **新浪財經**          | HTTP       | 5s       | 0.5s   | 0.6  | XAU, XAG, USD-TWD |
+| **BullionVault**      | XML API    | 10s      | 2s     | 0.7  | XAU               |
+| **Yahoo Finance**     | REST API   | 60s      | 5s     | 0.5  | XAU, XAG, USD-TWD |
+| **Kitco**             | HTML 爬蟲  | 60s      | 10s    | 0.4  | XAU, XAG          |
+| **Investing.com**     | Playwright | 120s     | 15s    | 0.5  | XAU, XAG, USD-TWD |
+| **OANDA**             | REST API   | 5s       | 3s     | 0.8  | XAU, XAG, USD-TWD |
+| **Taiwan Bank**       | CSV        | 60s      | 20s    | 0.7  | USD-TWD           |
+| **exchangerate.host** | REST API   | 30s      | 12s    | 0.5  | USD-TWD           |
+| **open.er-api.com**   | REST API   | 60s      | 25s    | 0.5  | USD-TWD           |
+| **Mock**              | 測試       | 2s       | 0s     | 0.3  | 全部              |
+
+### 可加入的免費即時匯率來源（候選）
+
+以下為可評估加入的免費來源（多數有頻率限制或需申請免費金鑰）：
+
+- exchangerate.host（已加入）
+- open.er-api.com（已加入）
+- frankfurter.app（ECB 來源，適合非高頻用途）
+- tw.rter.info（匯率聚合站點，需注意使用條款）
+- 各銀行公開牌告 CSV/HTML（多為分鐘級更新）
 
 ### 時間分片說明
 
