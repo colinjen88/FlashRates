@@ -18,8 +18,8 @@ class BinanceSource(BaseSource):
         self.weight = 0.8  # 高權重
 
     async def fetch_price(self, symbol: str) -> Optional[float]:
-        # Binance 只支援 XAU (透過 PAXG)
-        if "XAU" not in symbol:
+        # Binance 只處理 PAXG 獨立報價，不混入 XAU-USD
+        if symbol != "PAXG-USD":
             return None
             
         try:

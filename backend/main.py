@@ -76,7 +76,7 @@ async def startup_event():
     scheduler = Scheduler(sources, aggregator)
     
     # 在後台運行 scheduler
-    scheduler_task = asyncio.create_task(scheduler.run(symbols=["XAU-USD", "XAG-USD", "USD-TWD"]))
+    scheduler_task = asyncio.create_task(scheduler.run(symbols=["XAU-USD", "XAG-USD", "USD-TWD", "PAXG-USD"]))
     
     logger.info(f"Application started with {len(sources)} data sources")
 
@@ -102,7 +102,7 @@ async def root():
     return {"status": "ok", "app": settings.APP_NAME, "sources": 14}
 
 @app.get("/api/v1/latest")
-async def get_latest(symbols: str = "xau-usd,xag-usd,usd-twd", api_key: str = Depends(verify_api_key)):
+async def get_latest(symbols: str = "xau-usd,xag-usd,usd-twd,paxg-usd", api_key: str = Depends(verify_api_key)):
     """獲取最新匯率數據"""
     import json
     result = {}
@@ -191,7 +191,7 @@ async def websocket_endpoint(websocket: WebSocket):
         return
     await websocket.accept()
     pubsub = redis_client.redis.pubsub()
-    await pubsub.subscribe("market:stream:XAU-USD", "market:stream:XAG-USD", "market:stream:USD-TWD")
+    await pubsub.subscribe("market:stream:XAU-USD", "market:stream:XAG-USD", "market:stream:USD-TWD", "market:stream:PAXG-USD")
     
     try:
         while True:

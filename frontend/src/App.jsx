@@ -402,8 +402,8 @@ const DashboardSection = () => {
         </p>
       </div>
 
-      {/* 三卡片佈局 (Grid cols 3) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-16">
+      {/* 四卡片佈局 (Grid cols 4) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-7xl mx-auto mb-16">
         <AssetCard
           name="黃金現貨"
           symbol="XAU-USD"
@@ -420,6 +420,21 @@ const DashboardSection = () => {
           isMarketOpen={marketData["XAU-USD"]?.is_market_open}
         />
         <AssetCard
+          name="PAXG 代幣"
+          symbol="PAXG-USD"
+          price={marketData["PAXG-USD"]?.price}
+          prevPrice={prevMarketData["PAXG-USD"]}
+          timestamp={marketData["PAXG-USD"]?.timestamp}
+          source={marketData["PAXG-USD"]?.details?.[0]}
+          fastest={marketData["PAXG-USD"]?.fastest}
+          fastestLatency={marketData["PAXG-USD"]?.fastestLatency}
+          avgLatency={marketData["PAXG-USD"]?.avgLatency}
+          sourcesCount={marketData["PAXG-USD"]?.sources}
+          supportedCount={1}
+          sources={marketData["PAXG-USD"]?.details}
+          isMarketOpen={true} // Crypto 24/7 always open
+        />
+        <AssetCard
           name="白銀現貨"
           symbol="XAG-USD"
           price={marketData["XAG-USD"]?.price}
@@ -431,6 +446,7 @@ const DashboardSection = () => {
           avgLatency={marketData["XAG-USD"]?.avgLatency}
           sourcesCount={marketData["XAG-USD"]?.sources}
           supportedCount={supportedCounts["XAG-USD"]}
+          sources={marketData["XAG-USD"]?.details}
           isMarketOpen={marketData["XAG-USD"]?.is_market_open}
         />
         <AssetCard

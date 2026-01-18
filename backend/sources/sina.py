@@ -22,12 +22,12 @@ class SinaFinanceSource(BaseSource):
     async def fetch_price(self, symbol: str) -> Optional[float]:
         # 新浪財經代碼映射
         sina_symbol = None
-        if "XAU" in symbol:
-            sina_symbol = "hf_GC"  # 黃金期貨
-        elif "XAG" in symbol:
-            sina_symbol = "hf_SI"  # 白銀期貨
-        elif "USD" in symbol and "TWD" in symbol:
+        if "USD" in symbol and "TWD" in symbol:
             sina_symbol = "fx_susdtwd"  # 美元/台幣
+        else:
+            # 暫時移除 Sina 的貴金屬期貨，避免與現貨混淆
+            # hf_GC / hf_SI 是期貨數據
+            return None
             
         if not sina_symbol:
             return None

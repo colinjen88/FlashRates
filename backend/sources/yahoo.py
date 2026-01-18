@@ -21,9 +21,9 @@ class YahooFinanceSource(BaseSource):
         # Yahoo 代碼映射
         yahoo_symbol = None
         if "XAU" in symbol:
-            yahoo_symbol = "GC=F"  # 黃金期貨
+            yahoo_symbol = "XAUUSD=X"  # 黃金現貨 (Spot)
         elif "XAG" in symbol:
-            yahoo_symbol = "SI=F"  # 白銀期貨
+            yahoo_symbol = "XAGUSD=X"  # 白銀現貨 (Spot)
         elif "USD" in symbol and "TWD" in symbol:
             yahoo_symbol = "TWD=X"  # 美元/台幣
             
