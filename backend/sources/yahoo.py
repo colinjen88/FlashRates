@@ -24,6 +24,8 @@ class YahooFinanceSource(BaseSource):
             yahoo_symbol = "XAUUSD=X"  # 黃金現貨 (Spot)
         elif symbol == "GC-F":
             yahoo_symbol = "GC=F"      # 黃金期貨 (Futures)
+        elif symbol == "SI-F":
+            yahoo_symbol = "SI=F"      # 白銀期貨 (Futures)
         elif "XAG" in symbol:
             yahoo_symbol = "XAGUSD=X"  # 白銀現貨 (Spot)
         elif "USD" in symbol and "TWD" in symbol:
