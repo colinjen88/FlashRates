@@ -37,7 +37,7 @@ from backend.sources.exchangerate_host import ExchangerateHostSource
 from backend.sources.open_er_api import OpenErApiSource
 from backend.sources.fawazahmed import FawazahmedSource
 from backend.sources.floatrates import FloatRatesSource
-from backend.sources.mock import MockSource
+# from backend.sources.mock import MockSource
 from backend.aggregator import Aggregator
 from backend.scheduler import Scheduler
 
@@ -67,7 +67,7 @@ async def startup_event():
         OpenErApiSource(),         # 11. open.er-api.com (USD-TWD)
         FawazahmedSource(),        # 12. Fawaz API (USD-TWD CDN)
         FloatRatesSource(),        # 13. FloatRates (USD-TWD)
-        MockSource(name="Mock"),   # 14. Mock (測試用)
+        # MockSource(name="Mock"),   # 14. Mock (已移除，確保全真實數據)
     ]
     
     aggregator = Aggregator(sources)
