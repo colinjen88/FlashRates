@@ -19,10 +19,56 @@ class Aggregator:
         # 建立 source_name -> weight 的映射
         self.weights = {src.source_name: getattr(src, 'weight', 0.5) for src in sources}
 
+    def _calculate_freshness(self, age: float, max_age: float) -> float:
+        """
+        計算新鮮度權重。
+        小於 2 秒的資料視為新鮮 (1.0)，之後呈指數衰減。
+        """
+        if age < 2.0:
+            return 1.0
+        # 衰減常數調整，讓衰減更平滑但有效
+        return math.exp(-(age - 2.0) / max(1.0, max_age / 2))
+
+    def _filter_outliers_mad(self, entries: List[Dict]) -> List[Dict]:
+        """
+        使用 MAD (Median Absolute Deviation) 演算法過濾異常值。
+        比固定的百分比過濾更具自適應性。
+        """
+        prices = [e['price'] for e in entries]
+        if len(prices) < 3:
+            return entries
+            
+        median = statistics.median(prices)
+        # 計算絕對偏差
+        deviations = [abs(x - median) for x in prices]
+        mad = statistics.median(deviations)
+        
+        # 設定動態閾值：
+        # 1. 基礎容忍度：3倍 MAD (標準統計學常規)
+        # 2. 最小容忍度：價格的 0.05% (避免市場平靜時過濾正常的微小波動)
+        # 3. 最大容忍度：價格的 1.0% (防止極端波動時接受錯誤報價)
+        
+        threshold = max(3 * mad, median * 0.0005)
+        threshold = min(threshold, median * 0.01)
+        
+        filtered = []
+        for e in entries:
+            diff = abs(e['price'] - median)
+            if diff <= threshold:
+                filtered.append(e)
+            else:
+                logger.debug(f"Outlier detected: {e['source']} price={e['price']} (median={median}, threshold={threshold:.4f})")
+                
+        if not filtered:
+             # 如果全都被過濾 (極端情況)，回退到全部使用
+             return entries
+             
+        return filtered
+
     async def aggregate(self, symbol: str, results: List[Dict]) -> Optional[Dict]:
         """
         處理來自不同數據源的結果並計算最終價格。
-        使用加權平均並過濾異常值。
+        使用加權平均並配合 MAD 異常值過濾。
         """
         valid_entries = []
         
@@ -61,7 +107,8 @@ class Aggregator:
                 age = max(0, now - ts)
                 if age > max_age:
                     continue
-                freshness = math.exp(-age / max(1.0, max_age / 2))
+                # 使用新的新鮮度計算
+                freshness = self._calculate_freshness(age, max_age)
             else:
                 freshness = 1.0
 
@@ -75,34 +122,17 @@ class Aggregator:
             logger.warning(f"No fresh data for {symbol}")
             return None
 
-        prices = [e['price'] for e in fresh_entries]
-        sources_used: List[str] = []
-        entries_for_output = fresh_entries
+        # 使用 MAD 過濾異常值
+        filtered_entries = self._filter_outliers_mad(fresh_entries)
+        entries_for_output = filtered_entries
         
-        # 計算中位數用於異常值檢測
-        if len(prices) >= 3:
-            median = statistics.median(prices)
-            # 過濾偏離中位數 > 0.3% 的異常值
-            filtered_entries = [
-                e for e in fresh_entries 
-                if abs(e['price'] - median) / median < 0.003
-            ]
-            
-            if not filtered_entries:
-                # 如果全都被過濾，使用中位數
-                final_price = median
-                logger.warning(f"{symbol}: All prices filtered as outliers, using median")
-                entries_for_output = fresh_entries
-            else:
-                # 加權平均計算
-                total_weight = sum(e['eff_weight'] for e in filtered_entries)
-                final_price = sum(e['price'] * e['eff_weight'] for e in filtered_entries) / total_weight
-                entries_for_output = filtered_entries
+        # 加權平均計算
+        total_weight = sum(e['eff_weight'] for e in entries_for_output)
+        if total_weight > 0:
+            final_price = sum(e['price'] * e['eff_weight'] for e in entries_for_output) / total_weight
         else:
-            # 數據點太少，直接取加權平均
-            total_weight = sum(e['eff_weight'] for e in fresh_entries)
-            final_price = sum(e['price'] * e['eff_weight'] for e in fresh_entries) / total_weight
-            entries_for_output = fresh_entries
+            # 備援：簡單算術平均
+            final_price = statistics.mean([e['price'] for e in entries_for_output])
 
         sources_used = [e['source'] for e in entries_for_output]
 
