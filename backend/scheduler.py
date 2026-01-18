@@ -65,7 +65,13 @@ class Scheduler:
                 if self.aggregator.circuit_breaker.is_available(source.source_name):
                     result = await source.get_data(symbol)
                     if result:
-                        result["max_age"] = max_age
+                        # 如果市場關閉，放寬 max_age 以配合 30s 的輪詢間隔
+                        # 避免因為輪詢變慢導致數據被判定為過期
+                        current_max_age = max_age
+                        if not is_market_open(symbol) and "Binance" not in source.source_name:
+                            current_max_age = max(max_age, 60) # 至少 60 秒有效期
+                            
+                        result["max_age"] = current_max_age
                         if symbol not in self.latest_results:
                             self.latest_results[symbol] = {}
                         self.latest_results[symbol][source.source_name] = result
