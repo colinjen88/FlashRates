@@ -7,6 +7,7 @@ from backend.sources.base import BaseSource
 from backend.circuit_breaker import CircuitBreaker
 from backend.redis_client import redis_client
 from backend.metrics import record_aggregate
+from backend.market_hours import is_market_open
 import logging
 
 logger = logging.getLogger(__name__)
@@ -133,7 +134,8 @@ class Aggregator:
             "details": sources_used,
             "fastest": fastest_source,
             "fastestLatency": round(fastest_latency, 1),  # 最快來源的延遲 (真實即時性指標)
-            "avgLatency": round(weighted_latency, 1)      # 加權延遲 (排除慢速來源)
+            "avgLatency": round(weighted_latency, 1),      # 加權延遲 (排除慢速來源)
+            "is_market_open": is_market_open(symbol)       # 市場狀態
         }
         
         # 發布到 Redis PubSub 和儲存最新值

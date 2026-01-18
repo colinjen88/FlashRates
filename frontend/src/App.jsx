@@ -156,6 +156,7 @@ const AssetCard = ({
   sourcesCount,
   supportedCount,
   sources,
+  isMarketOpen,
 }) => {
   const [now, setNow] = useState(Date.now());
   const hasData = price !== undefined && price !== null;
@@ -184,9 +185,19 @@ const AssetCard = ({
             <span className="text-sm font-bold text-white flex items-center gap-2">
               {name}
               <span
-                className={`text-[10px] ${hasData ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-slate-400 bg-slate-500/10 border-slate-500/20"} px-1.5 py-0.5 rounded border font-mono`}
+                className={`text-[10px] ${
+                  hasData
+                    ? isMarketOpen === false
+                      ? "text-orange-400 bg-orange-500/10 border-orange-500/20"
+                      : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                    : "text-slate-400 bg-slate-500/10 border-slate-500/20"
+                } px-1.5 py-0.5 rounded border font-mono`}
               >
-                {hasData ? "即時" : "等待中"}
+                {hasData
+                  ? isMarketOpen === false
+                    ? "停盤(場外交易)"
+                    : "即時"
+                  : "等待中"}
               </span>
             </span>
             <span className="text-xs text-slate-500 font-mono font-medium mt-0.5">
@@ -406,6 +417,7 @@ const DashboardSection = () => {
           sourcesCount={marketData["XAU-USD"]?.sources}
           supportedCount={supportedCounts["XAU-USD"]}
           sources={marketData["XAU-USD"]?.details}
+          isMarketOpen={marketData["XAU-USD"]?.is_market_open}
         />
         <AssetCard
           name="白銀現貨"
@@ -419,7 +431,7 @@ const DashboardSection = () => {
           avgLatency={marketData["XAG-USD"]?.avgLatency}
           sourcesCount={marketData["XAG-USD"]?.sources}
           supportedCount={supportedCounts["XAG-USD"]}
-          sources={marketData["XAG-USD"]?.details}
+          isMarketOpen={marketData["XAG-USD"]?.is_market_open}
         />
         <AssetCard
           name="美元匯率"
@@ -434,6 +446,7 @@ const DashboardSection = () => {
           sourcesCount={marketData["USD-TWD"]?.sources}
           supportedCount={supportedCounts["USD-TWD"]}
           sources={marketData["USD-TWD"]?.details}
+          isMarketOpen={marketData["USD-TWD"]?.is_market_open}
         />
       </div>
 

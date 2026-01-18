@@ -4,6 +4,7 @@ import logging
 from backend.sources.base import BaseSource
 from backend.aggregator import Aggregator
 from backend.metrics import record_source_failure, record_source_success
+from backend.market_hours import is_market_open
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +89,14 @@ class Scheduler:
                 )
                 await record_source_failure(source.source_name)
             
-            await asyncio.sleep(base_interval * self._interval_scale[source.source_name])
+                await record_source_failure(source.source_name)
+            
+            # 動態調整輪詢間隔
+            # 如果市場關閉 (且非 24/7 的 Binance/Crypto 來源)，固定每 30 秒更新一次
+            if not is_market_open(symbol) and "Binance" not in source.source_name:
+                await asyncio.sleep(30)
+            else:
+                await asyncio.sleep(base_interval * self._interval_scale[source.source_name])
 
     async def _aggregate_loop(self, symbols: List[str]):
         """定期聚合所有來源的數據"""
