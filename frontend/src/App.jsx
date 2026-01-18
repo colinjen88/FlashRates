@@ -402,9 +402,9 @@ const DashboardSection = () => {
         </p>
       </div>
 
-      {/* 現貨區 */}
-      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">現貨 (Spot)</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto mb-8">
+      {/* 黃金區 (Gold) */}
+      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">黃金 (Gold)</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-8">
         <AssetCard
           name="黃金現貨"
           symbol="XAU-USD"
@@ -421,26 +421,6 @@ const DashboardSection = () => {
           isMarketOpen={marketData["XAU-USD"]?.is_market_open}
         />
         <AssetCard
-          name="白銀現貨"
-          symbol="XAG-USD"
-          price={marketData["XAG-USD"]?.price}
-          prevPrice={prevMarketData["XAG-USD"]}
-          timestamp={marketData["XAG-USD"]?.timestamp}
-          source={marketData["XAG-USD"]?.details?.[0]}
-          fastest={marketData["XAG-USD"]?.fastest}
-          fastestLatency={marketData["XAG-USD"]?.fastestLatency}
-          avgLatency={marketData["XAG-USD"]?.avgLatency}
-          sourcesCount={marketData["XAG-USD"]?.sources}
-          supportedCount={supportedCounts["XAG-USD"]}
-          sources={marketData["XAG-USD"]?.details}
-          isMarketOpen={marketData["XAG-USD"]?.is_market_open}
-        />
-      </div>
-
-      {/* 期貨區 */}
-      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">期貨 (Futures)</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto mb-8">
-        <AssetCard
           name="黃金期貨"
           symbol="GC-F"
           price={marketData["GC-F"]?.price}
@@ -456,26 +436,6 @@ const DashboardSection = () => {
           isMarketOpen={marketData["GC-F"]?.is_market_open}
         />
         <AssetCard
-          name="白銀期貨"
-          symbol="SI-F"
-          price={marketData["SI-F"]?.price}
-          prevPrice={prevMarketData["SI-F"]}
-          timestamp={marketData["SI-F"]?.timestamp}
-          source={marketData["SI-F"]?.details?.[0]}
-          fastest={marketData["SI-F"]?.fastest}
-          fastestLatency={marketData["SI-F"]?.fastestLatency}
-          avgLatency={marketData["SI-F"]?.avgLatency}
-          sourcesCount={marketData["SI-F"]?.sources}
-          supportedCount={2}
-          sources={marketData["SI-F"]?.details}
-          isMarketOpen={marketData["SI-F"]?.is_market_open}
-        />
-      </div>
-
-      {/* 其他區 */}
-      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">其他 (Others)</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto mb-16">
-        <AssetCard
           name="PAXG 代幣"
           symbol="PAXG-USD"
           price={marketData["PAXG-USD"]?.price}
@@ -489,6 +449,41 @@ const DashboardSection = () => {
           supportedCount={1}
           sources={marketData["PAXG-USD"]?.details}
           isMarketOpen={true}
+        />
+      </div>
+
+      {/* 白銀區 + 匯率 (Silver & FX) */}
+      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">白銀 / 匯率 (Silver & FX)</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-16">
+        <AssetCard
+          name="白銀現貨"
+          symbol="XAG-USD"
+          price={marketData["XAG-USD"]?.price}
+          prevPrice={prevMarketData["XAG-USD"]}
+          timestamp={marketData["XAG-USD"]?.timestamp}
+          source={marketData["XAG-USD"]?.details?.[0]}
+          fastest={marketData["XAG-USD"]?.fastest}
+          fastestLatency={marketData["XAG-USD"]?.fastestLatency}
+          avgLatency={marketData["XAG-USD"]?.avgLatency}
+          sourcesCount={marketData["XAG-USD"]?.sources}
+          supportedCount={supportedCounts["XAG-USD"]}
+          sources={marketData["XAG-USD"]?.details}
+          isMarketOpen={marketData["XAG-USD"]?.is_market_open}
+        />
+        <AssetCard
+          name="白銀期貨"
+          symbol="SI-F"
+          price={marketData["SI-F"]?.price}
+          prevPrice={prevMarketData["SI-F"]}
+          timestamp={marketData["SI-F"]?.timestamp}
+          source={marketData["SI-F"]?.details?.[0]}
+          fastest={marketData["SI-F"]?.fastest}
+          fastestLatency={marketData["SI-F"]?.fastestLatency}
+          avgLatency={marketData["SI-F"]?.avgLatency}
+          sourcesCount={marketData["SI-F"]?.sources}
+          supportedCount={2}
+          sources={marketData["SI-F"]?.details}
+          isMarketOpen={marketData["SI-F"]?.is_market_open}
         />
         <AssetCard
           name="美元匯率"
