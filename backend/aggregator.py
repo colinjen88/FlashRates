@@ -70,14 +70,6 @@ class Aggregator:
         處理來自不同數據源的結果並計算最終價格。
         使用加權平均並配合 MAD 異常值過濾。
         """
-        # 如果市場關閉，直接返回 Redis 中快取的最後價格，避免重複聚合造成的微小波動
-        if not is_market_open(symbol):
-            cached = await redis_client.get(f"market:latest:{symbol}")
-            if cached:
-                import json
-                return json.loads(cached)
-            # 如果沒有快取，繼續往下計算一次初始值
-        
         valid_entries = []
         
         for res in results:
