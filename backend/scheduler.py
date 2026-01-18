@@ -95,8 +95,6 @@ class Scheduler:
                 )
                 await record_source_failure(source.source_name)
             
-                await record_source_failure(source.source_name)
-            
             # 動態調整輪詢間隔
             # 如果市場關閉 (且非 24/7 的 Binance/Crypto 來源)，固定每 30 秒更新一次
             if not is_market_open(symbol) and "Binance" not in source.source_name:
