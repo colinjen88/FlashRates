@@ -165,9 +165,9 @@ FlashRates/
 
 **認證方式：**
 
-- Header: `X-API-Key: <YOUR_API_KEY>`
-- 或 `Authorization: Bearer <YOUR_API_KEY>`
-  > 若未設定 `API_KEYS`，則不強制驗證（開發環境預設）。
+- Header: `X-API-Key: <dev_key>`
+- 或 `Authorization: Bearer <dev_key>`
+  > 若未設定 `API_KEYS`，則不強制驗證（開發環境預設），可使用任意 Key (如 `dev_key`)。
 
 **頻率限制：**
 
@@ -219,7 +219,7 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 
 **認證方式：**
 
-- Query: `ws://localhost:8000/ws/stream?api_key=<YOUR_API_KEY>`
+- Query: `ws://localhost:8000/ws/stream?api_key=dev_key`
 - 或在 Header 帶 `X-API-Key`
 
 **推送訊息格式：**

@@ -307,7 +307,10 @@ const DashboardSection = () => {
     let reconnectTimeout;
 
     const connect = () => {
-      ws = new WebSocket("ws://localhost:8000/ws/stream?api_key=YOUR_API_KEY");
+      // 確保後端 (backend/main.py) 已啟動 (uvicorn backend.main:app --reload)
+      // 目前後端預設設定 (config.py) 允許任意 API Key，除非在 .env 設定了鎖定。
+      const apiKey = "dev_key";
+      ws = new WebSocket(`ws://localhost:8000/ws/stream?api_key=${apiKey}`);
 
       ws.onopen = () => {
         console.log("Connected to WebSocket");
