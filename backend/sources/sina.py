@@ -52,10 +52,19 @@ class SinaFinanceSource(BaseSource):
             match = re.search(r'"([^"]+)"', text)
             if match:
                 data = match.group(1).split(',')
-                if len(data) > 0:
-                    # 通常第一個或第三個字段是價格
-                    price = float(data[0]) if data[0] else float(data[2]) if len(data) > 2 else None
-                    return price
+                if len(data) > 3:
+                    # 對於 fx_susdtwd，index 0 是時間 (e.g., 05:59:36)，index 1/2/3 是價格
+                    # 對於 hf_GC，index 0 是價格
+                    try:
+                        if ':' in data[0]:
+                            # 格式: Time, Bid, Ask, Last, ...
+                            price = float(data[3]) if data[3] else float(data[1])
+                        else:
+                            # 格式: Last, ...
+                            price = float(data[0])
+                        return price
+                    except (ValueError, IndexError):
+                        pass
             return None
         except Exception as e:
             logger.warning(f"Error fetching Sina Finance: {e}")

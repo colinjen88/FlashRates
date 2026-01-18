@@ -151,6 +151,7 @@ const AssetCard = ({
   timestamp,
   source,
   fastest,
+  fastestLatency,
   avgLatency,
   sourcesCount,
   supportedCount,
@@ -234,11 +235,24 @@ const AssetCard = ({
               {hasData ? fastest || source || "多源聚合" : "等待連線..."}
             </span>
           </div>
-          <span
-            className={`text-[10px] font-mono ${hasData ? "text-emerald-500" : "text-slate-500"}`}
-          >
-            {hasData ? `${avgLatency || 0}ms` : "-"}
-          </span>
+          <div className="flex items-center gap-2">
+            {/* 最快來源延遲 - 突出顯示 */}
+            <span
+              className={`text-[10px] font-mono font-bold ${hasData ? "text-emerald-400" : "text-slate-500"}`}
+              title="最快來源延遲"
+            >
+              {hasData ? `${fastestLatency || 0}ms` : "-"}
+            </span>
+            {/* 加權平均延遲 - 次要顯示 */}
+            {hasData && avgLatency > 0 && (
+              <span
+                className="text-[9px] font-mono text-slate-500"
+                title="加權平均延遲"
+              >
+                (avg {avgLatency}ms)
+              </span>
+            )}
+          </div>
         </div>
 
         {/* 資料來源清單 */}
@@ -385,6 +399,7 @@ const DashboardSection = () => {
           timestamp={marketData["XAU-USD"]?.timestamp}
           source={marketData["XAU-USD"]?.details?.[0]}
           fastest={marketData["XAU-USD"]?.fastest}
+          fastestLatency={marketData["XAU-USD"]?.fastestLatency}
           avgLatency={marketData["XAU-USD"]?.avgLatency}
           sourcesCount={marketData["XAU-USD"]?.sources}
           supportedCount={supportedCounts["XAU-USD"]}
@@ -398,6 +413,7 @@ const DashboardSection = () => {
           timestamp={marketData["XAG-USD"]?.timestamp}
           source={marketData["XAG-USD"]?.details?.[0]}
           fastest={marketData["XAG-USD"]?.fastest}
+          fastestLatency={marketData["XAG-USD"]?.fastestLatency}
           avgLatency={marketData["XAG-USD"]?.avgLatency}
           sourcesCount={marketData["XAG-USD"]?.sources}
           supportedCount={supportedCounts["XAG-USD"]}
@@ -411,6 +427,7 @@ const DashboardSection = () => {
           timestamp={marketData["USD-TWD"]?.timestamp}
           source={marketData["USD-TWD"]?.details?.[0]}
           fastest={marketData["USD-TWD"]?.fastest}
+          fastestLatency={marketData["USD-TWD"]?.fastestLatency}
           avgLatency={marketData["USD-TWD"]?.avgLatency}
           sourcesCount={marketData["USD-TWD"]?.sources}
           supportedCount={supportedCounts["USD-TWD"]}
@@ -426,7 +443,7 @@ const DashboardSection = () => {
         />
         <FeatureCard
           icon={Cpu}
-          title="10源異構聚合"
+          title="多來源異構聚合"
           desc="同時採集 HTML 爬蟲、WebSocket 流、REST API 與區塊鏈預言機 (Oracle)，確保數據來源多樣化，徹底解決單一來源封鎖問題。"
         />
         <FeatureCard
