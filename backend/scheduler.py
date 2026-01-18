@@ -25,20 +25,20 @@ logger = logging.getLogger(__name__)
 # └────────────────┴──────────┴──────────┴─────────────────────────────────────────┘
 
 SOURCE_CONFIG = {
-    "Binance": {"interval": 2, "offset": 0},       # Binance API 限制寬鬆，2 秒安全
-    "GoldPrice.org": {"interval": 15, "offset": 1},  # 保守避免封鎖
-    "Sina Finance": {"interval": 5, "offset": 0.5},  # 公開接口
-    "BullionVault": {"interval": 10, "offset": 2},   # 官方 XML API
-    "Yahoo Finance": {"interval": 60, "offset": 5},  # 非官方，保守
-    "Kitco": {"interval": 60, "offset": 10},         # HTML 爬蟲，保守
-    "Investing.com": {"interval": 120, "offset": 15}, # Cloudflare，非常保守
-    "OANDA": {"interval": 5, "offset": 3},           # Demo API
-    "Taiwan Bank": {"interval": 60, "offset": 20},   # 官方牌告
-    "Mock": {"interval": 2, "offset": 0},            # 測試用
-    "exchangerate.host": {"interval": 30, "offset": 12},
-    "open.er-api.com": {"interval": 60, "offset": 25},
-    "Fawaz API": {"interval": 3600, "offset": 30},   # CDN 更新較慢 (每小時)
-    "FloatRates": {"interval": 3600, "offset": 45},  # 每日更新 (每小時候polling即可)
+    "Binance": {"interval": 2, "offset": 0, "max_age": 6},       # Binance API 限制寬鬆，2 秒安全
+    "GoldPrice.org": {"interval": 15, "offset": 1, "max_age": 45},  # 保守避免封鎖
+    "Sina Finance": {"interval": 5, "offset": 0.5, "max_age": 15},  # 公開接口
+    "BullionVault": {"interval": 10, "offset": 2, "max_age": 30},   # 官方 XML API
+    "Yahoo Finance": {"interval": 60, "offset": 5, "max_age": 180},  # 非官方，保守
+    "Kitco": {"interval": 60, "offset": 10, "max_age": 180},         # HTML 爬蟲，保守
+    "Investing.com": {"interval": 120, "offset": 15, "max_age": 360}, # Cloudflare，非常保守
+    "OANDA": {"interval": 5, "offset": 3, "max_age": 15},           # Demo API
+    "Taiwan Bank": {"interval": 60, "offset": 20, "max_age": 180},   # 官方牌告
+    "Mock": {"interval": 2, "offset": 0, "max_age": 6},            # 測試用
+    "exchangerate.host": {"interval": 30, "offset": 12, "max_age": 90},
+    "open.er-api.com": {"interval": 60, "offset": 25, "max_age": 180},
+    "Fawaz API": {"interval": 3600, "offset": 30, "max_age": 10800},   # CDN 更新較慢 (每小時)
+    "FloatRates": {"interval": 3600, "offset": 45, "max_age": 10800},  # 每日更新 (每小時候polling即可)
 }
 
 class Scheduler:
@@ -48,10 +48,13 @@ class Scheduler:
         self.running = False
         self.latest_results: Dict[str, Dict[str, Dict]] = {}  # symbol -> {source -> result}
         self._tasks: List[asyncio.Task] = []
+        self._interval_scale: Dict[str, float] = {s.source_name: 1.0 for s in sources}
 
     async def _poll_source(self, source: BaseSource, symbol: str):
         """輪詢單一數據源"""
         config = SOURCE_CONFIG.get(source.source_name, {"interval": 10, "offset": 0})
+        base_interval = config["interval"]
+        max_age = config.get("max_age", base_interval * 3)
         
         # 初始偏移
         await asyncio.sleep(config["offset"])
@@ -61,21 +64,31 @@ class Scheduler:
                 if self.aggregator.circuit_breaker.is_available(source.source_name):
                     result = await source.get_data(symbol)
                     if result:
+                        result["max_age"] = max_age
                         if symbol not in self.latest_results:
                             self.latest_results[symbol] = {}
                         self.latest_results[symbol][source.source_name] = result
+                        self._interval_scale[source.source_name] = max(
+                            1.0, self._interval_scale[source.source_name] * 0.9
+                        )
                         await record_source_success(source.source_name, result.get("latency", 0))
                     else:
                         self.aggregator.circuit_breaker.record_failure(source.source_name)
+                        self._interval_scale[source.source_name] = min(
+                            4.0, self._interval_scale[source.source_name] * 1.5
+                        )
                         await record_source_failure(source.source_name)
                 else:
                     logger.debug(f"Skipping {source.source_name} due to circuit breaker")
             except Exception as e:
                 logger.error(f"Error polling {source.source_name} for {symbol}: {e}")
                 self.aggregator.circuit_breaker.record_failure(source.source_name)
+                self._interval_scale[source.source_name] = min(
+                    4.0, self._interval_scale[source.source_name] * 1.5
+                )
                 await record_source_failure(source.source_name)
             
-            await asyncio.sleep(config["interval"])
+            await asyncio.sleep(base_interval * self._interval_scale[source.source_name])
 
     async def _aggregate_loop(self, symbols: List[str]):
         """定期聚合所有來源的數據"""

@@ -1,5 +1,7 @@
 import statistics
 import json
+import math
+import time
 from typing import List, Dict, Optional
 from backend.sources.base import BaseSource
 from backend.circuit_breaker import CircuitBreaker
@@ -41,22 +43,47 @@ class Aggregator:
                 "price": price,
                 "weight": weight,
                 "latency": res.get('latency', 0),
-                "timestamp": res.get('timestamp')
+                "timestamp": res.get('timestamp'),
+                "max_age": res.get('max_age')
             })
 
         if not valid_entries:
             logger.warning(f"No valid data for {symbol}")
             return None
 
-        prices = [e['price'] for e in valid_entries]
-        sources_used = [e['source'] for e in valid_entries]
+        now = time.time()
+        fresh_entries = []
+        for e in valid_entries:
+            ts = e.get("timestamp")
+            max_age = e.get("max_age")
+            if ts and max_age is not None:
+                age = max(0, now - ts)
+                if age > max_age:
+                    continue
+                freshness = math.exp(-age / max(1.0, max_age / 2))
+            else:
+                freshness = 1.0
+
+            eff_weight = e["weight"] * freshness
+            if eff_weight <= 0:
+                continue
+            e["eff_weight"] = eff_weight
+            fresh_entries.append(e)
+
+        if not fresh_entries:
+            logger.warning(f"No fresh data for {symbol}")
+            return None
+
+        prices = [e['price'] for e in fresh_entries]
+        sources_used: List[str] = []
+        entries_for_output = fresh_entries
         
         # 計算中位數用於異常值檢測
         if len(prices) >= 3:
             median = statistics.median(prices)
             # 過濾偏離中位數 > 0.3% 的異常值
             filtered_entries = [
-                e for e in valid_entries 
+                e for e in fresh_entries 
                 if abs(e['price'] - median) / median < 0.003
             ]
             
@@ -64,34 +91,49 @@ class Aggregator:
                 # 如果全都被過濾，使用中位數
                 final_price = median
                 logger.warning(f"{symbol}: All prices filtered as outliers, using median")
+                entries_for_output = fresh_entries
             else:
                 # 加權平均計算
-                total_weight = sum(e['weight'] for e in filtered_entries)
-                final_price = sum(e['price'] * e['weight'] for e in filtered_entries) / total_weight
+                total_weight = sum(e['eff_weight'] for e in filtered_entries)
+                final_price = sum(e['price'] * e['eff_weight'] for e in filtered_entries) / total_weight
+                entries_for_output = filtered_entries
         else:
             # 數據點太少，直接取加權平均
-            total_weight = sum(e['weight'] for e in valid_entries)
-            final_price = sum(e['price'] * e['weight'] for e in valid_entries) / total_weight
+            total_weight = sum(e['eff_weight'] for e in fresh_entries)
+            final_price = sum(e['price'] * e['eff_weight'] for e in fresh_entries) / total_weight
+            entries_for_output = fresh_entries
+
+        sources_used = [e['source'] for e in entries_for_output]
 
         # 找出最快響應的來源
-        fastest_source = min(valid_entries, key=lambda x: x['latency'])['source'] if valid_entries else "Unknown"
+        fastest_entry = min(fresh_entries, key=lambda x: x['latency']) if fresh_entries else None
+        fastest_source = fastest_entry['source'] if fastest_entry else "Unknown"
+        fastest_latency = fastest_entry['latency'] if fastest_entry else 0
         
-        # 計算平均延遲
-        avg_latency = statistics.mean([e['latency'] for e in valid_entries]) if valid_entries else 0
+        # 計算加權延遲 (權重高的來源影響力大，避免慢速來源拉高整體指標)
+        # 同時只計算前 N 個最快來源的延遲，排除極端慢速來源
+        sorted_entries = sorted(fresh_entries, key=lambda x: x['latency'])
+        top_entries = sorted_entries[:min(5, len(sorted_entries))]  # 只取前 5 快的來源
+        
+        if top_entries:
+            total_weight = sum(e['eff_weight'] for e in top_entries)
+            weighted_latency = sum(e['latency'] * e['eff_weight'] for e in top_entries) / total_weight
+        else:
+            weighted_latency = 0
 
-        # 使用最新來源時間作為聚合時間
-        source_timestamps = [e.get('timestamp') for e in valid_entries if e.get('timestamp')]
+        # 使用最新來源時間作為聚合時間 (確保「上次更新」準確)
+        source_timestamps = [e.get('timestamp') for e in entries_for_output if e.get('timestamp')]
         latest_source_ts = max(source_timestamps) if source_timestamps else None
 
-        import time
         output = {
             "symbol": symbol,
             "price": round(final_price, 2),
             "timestamp": latest_source_ts or time.time(),
-            "sources": len(valid_entries),
+            "sources": len(fresh_entries),
             "details": sources_used,
             "fastest": fastest_source,
-            "avgLatency": round(avg_latency, 1)
+            "fastestLatency": round(fastest_latency, 1),  # 最快來源的延遲 (真實即時性指標)
+            "avgLatency": round(weighted_latency, 1)      # 加權延遲 (排除慢速來源)
         }
         
         # 發布到 Redis PubSub 和儲存最新值
@@ -99,8 +141,8 @@ class Aggregator:
         await redis_client.publish(f"market:stream:{symbol}", output_json)
         await redis_client.set(f"market:latest:{symbol}", output_json)
 
-        await record_aggregate(symbol, len(valid_entries), avg_latency)
+        await record_aggregate(symbol, len(fresh_entries), weighted_latency)
         
-        logger.info(f"{symbol}: {final_price:.2f} from {len(valid_entries)} sources (fastest: {fastest_source})")
+        logger.info(f"{symbol}: {final_price:.2f} from {len(fresh_entries)} sources (fastest: {fastest_source})")
         
         return output
