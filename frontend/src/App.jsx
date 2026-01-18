@@ -402,8 +402,8 @@ const DashboardSection = () => {
         </p>
       </div>
 
-      {/* 四卡片佈局 (Grid cols 4) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-7xl mx-auto mb-16">
+      {/* 多卡片佈局 (Grid cols 3) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto mb-16">
         <AssetCard
           name="黃金現貨"
           symbol="XAU-USD"
@@ -433,6 +433,21 @@ const DashboardSection = () => {
           supportedCount={1}
           sources={marketData["PAXG-USD"]?.details}
           isMarketOpen={true} // Crypto 24/7 always open
+        />
+        <AssetCard
+          name="黃金期貨"
+          symbol="GC-F"
+          price={marketData["GC-F"]?.price}
+          prevPrice={prevMarketData["GC-F"]}
+          timestamp={marketData["GC-F"]?.timestamp}
+          source={marketData["GC-F"]?.details?.[0]}
+          fastest={marketData["GC-F"]?.fastest}
+          fastestLatency={marketData["GC-F"]?.fastestLatency}
+          avgLatency={marketData["GC-F"]?.avgLatency}
+          sourcesCount={marketData["GC-F"]?.sources}
+          supportedCount={2} // Sina + Yahoo
+          sources={marketData["GC-F"]?.details}
+          isMarketOpen={marketData["GC-F"]?.is_market_open}
         />
         <AssetCard
           name="白銀現貨"

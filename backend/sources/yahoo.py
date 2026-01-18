@@ -20,8 +20,10 @@ class YahooFinanceSource(BaseSource):
     async def fetch_price(self, symbol: str) -> Optional[float]:
         # Yahoo 代碼映射
         yahoo_symbol = None
-        if "XAU" in symbol:
+        if "XAU" in symbol and "USD" in symbol:
             yahoo_symbol = "XAUUSD=X"  # 黃金現貨 (Spot)
+        elif symbol == "GC-F":
+            yahoo_symbol = "GC=F"      # 黃金期貨 (Futures)
         elif "XAG" in symbol:
             yahoo_symbol = "XAGUSD=X"  # 白銀現貨 (Spot)
         elif "USD" in symbol and "TWD" in symbol:
