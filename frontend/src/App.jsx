@@ -384,8 +384,7 @@ const DashboardSection = () => {
           <span className="text-green-400">匯率</span>
         </h1>
         <p className="text-sm text-slate-400 leading-relaxed max-w-2xl mx-auto">
-          單一連接即可訂閱多種貴金屬報價。我們的並行處理引擎確保不同資產的延遲互不影響，完美支援
-          XAU/USD 與 XAG/USD 的套利策略。
+          多種數據來源錯開查詢，以降低更新秒數。
         </p>
       </div>
 
@@ -435,7 +434,7 @@ const DashboardSection = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
         <FeatureCard
           icon={Coins}
           title="多資產並行 (Parallel)"
