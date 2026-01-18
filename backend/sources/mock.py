@@ -6,6 +6,7 @@ from typing import Optional
 class MockSource(BaseSource):
     def __init__(self, name: str = "Mock"):
         super().__init__(name, priority=1)
+        self.weight = 0.3  # 測試用，低權重避免影響聚合結果
 
     async def fetch_price(self, symbol: str) -> Optional[float]:
         await asyncio.sleep(random.uniform(0.1, 0.5)) # Simulate network latency

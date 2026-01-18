@@ -439,17 +439,17 @@ const DashboardSection = () => {
         <FeatureCard
           icon={Coins}
           title="多資產並行 (Parallel)"
-          desc="系統後端為每種資產 (Gold, Silver, Platinum) 分配獨立的 Worker Pool，確保抓取白銀的延遲不會影響黃金的更新速度。"
+          desc="每個資產對 (XAU-USD, XAG-USD, USD-TWD) 各自獨立輪詢與聚合，避免單一資產慢源影響全局更新。"
         />
         <FeatureCard
           icon={Cpu}
           title="多來源異構聚合"
-          desc="同時採集 HTML 爬蟲、WebSocket 流、REST API 與區塊鏈預言機 (Oracle)，確保數據來源多樣化，徹底解決單一來源封鎖問題。"
+          desc="同時採集 REST API、HTML 爬蟲與 Playwright 來源，來源分散降低封鎖風險，聚合後輸出單一可信價格。"
         />
         <FeatureCard
           icon={AlertTriangle}
           title="異常值熔斷機制"
-          desc="當某個來源數據偏離市場中位數超過設定閾值（如 0.3%），系統會自動將其隔離並觸發警報，防止髒數據污染您的交易決策。"
+          desc="偏離中位數 > 0.3% 的來源自動剔除，並搭配 Circuit Breaker 熔斷連續失敗來源。"
         />
       </div>
     </div>
@@ -468,9 +468,23 @@ const CoreTechSection = () => (
     </div>
 
     <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8">
-      <h2 className="text-xl font-bold text-white mb-4">資料流流程圖</h2>
-      <pre className="text-xs sm:text-sm text-slate-300 bg-slate-950 border border-slate-800 rounded-lg p-4 overflow-x-auto">
-        {`Sources (Binance / GoldPrice / Sina / ...)
+      <h2 className="text-xl font-bold text-white mb-6">資料流流程圖</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        {/* Left: Professional Visual Diagram */}
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-1000"></div>
+          <img 
+            src="/flow_diagram.png" 
+            alt="FlashRates System Architecture" 
+            className="relative rounded-xl border border-slate-700 w-full shadow-2xl"
+          />
+        </div>
+
+        {/* Right: Technical Detail (Original ASCII) */}
+        <div className="w-full">
+          <h3 className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wider">Technical Flow</h3>
+          <pre className="text-xs sm:text-xs text-slate-300 bg-slate-950 border border-slate-800 rounded-lg p-4 overflow-x-auto font-mono leading-relaxed custom-scrollbar">
+            {`Sources (Binance / GoldPrice / Sina / ...)
    │  async fetch (aiohttp / Playwright)
    ▼
 Scheduler (staggered polling + offsets)
@@ -486,16 +500,19 @@ FastAPI
    └─ WS:   /ws/stream
    ▼
 React Dashboard / Admin`}
-      </pre>
+          </pre>
+        </div>
+      </div>
     </div>
 
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
         <h3 className="text-lg font-bold text-white mb-3">資料採集與調度</h3>
         <ul className="text-sm text-slate-400 space-y-2">
-          <li>asyncio 併發輪詢，每來源獨立 interval + offset。</li>
+          <li>asyncio 併發輪詢，每來源獨立 interval + offset 錯峰。</li>
+          <li>自適應輪詢：失敗自動降頻，成功逐步回到基準。</li>
           <li>aiohttp 為主要抓取器，Playwright 處理防爬來源。</li>
-          <li>共用 HTTP session + retry/backoff 減少斷線與瞬時失敗。</li>
+          <li>共用 HTTP session + retry/backoff 降低瞬時失敗。</li>
         </ul>
       </div>
       <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
@@ -503,7 +520,8 @@ React Dashboard / Admin`}
         <ul className="text-sm text-slate-400 space-y-2">
           <li>加權平均：高可信來源權重較高。</li>
           <li>中位數偏離 0.3% 的來源自動剔除。</li>
-          <li>最快來源與平均延遲統計回傳。</li>
+          <li>新鮮度衰減 + max_age 淘汰過期資料。</li>
+          <li>最快來源與加權平均延遲（前 5 快來源）。</li>
         </ul>
       </div>
       <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
@@ -520,6 +538,34 @@ React Dashboard / Admin`}
           <li>API Key 驗證 + Rate Limit（REST / WS 皆套用）。</li>
           <li>管理端可列出、停用、啟用與新增 Redis key。</li>
           <li>Redis 新增 key 需同步 .env 並重啟以持久化。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+        <h3 className="text-lg font-bold text-white mb-3">即時性與時效控制</h3>
+        <ul className="text-sm text-slate-400 space-y-2">
+          <li>聚合頻率固定 1 秒更新一次。</li>
+          <li>每來源 max_age 控制資料最大允許時效。</li>
+          <li>新鮮度衰減：越舊權重越低，避免慢源拖累。</li>
+          <li>「上次更新」使用最新採用來源時間戳。</li>
+        </ul>
+      </div>
+      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+        <h3 className="text-lg font-bold text-white mb-3">延遲與可觀測性</h3>
+        <ul className="text-sm text-slate-400 space-y-2">
+          <li>fastestLatency：最快來源延遲，代表即時能力。</li>
+          <li>avgLatency：前 5 快來源加權延遲，代表穩定性。</li>
+          <li>metrics 提供來源成功率、平均延遲與聚合計數。</li>
+        </ul>
+      </div>
+      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+        <h3 className="text-lg font-bold text-white mb-3">防封鎖與成本平衡</h3>
+        <ul className="text-sm text-slate-400 space-y-2">
+          <li>來源錯峰輪詢，避免同時高頻請求。</li>
+          <li>自適應降頻與熔斷，降低被封鎖機率。</li>
+          <li>低頻來源作備援，提高可用性與穩定性。</li>
         </ul>
       </div>
     </div>
@@ -585,215 +631,320 @@ const CodeBlock = () => {
   );
 };
 
-const DocsSection = () => (
-  <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-screen">
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-      {/* Sidebar Navigation */}
-      <div className="lg:col-span-3 hidden lg:block">
-        <div className="sticky top-24 space-y-8">
-          <div>
-            <h5 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
-              快速開始
-            </h5>
-            <ul className="space-y-2 border-l border-slate-800">
-              <li className="pl-4 border-l-2 border-emerald-500 text-emerald-400 font-medium">
-                簡介
-              </li>
-              <li className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors">
-                認證 (Authentication)
-              </li>
-              <li className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors">
-                頻率限制 (Rate Limits)
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h5 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
-              端點 (Endpoints)
-            </h5>
-            <ul className="space-y-2 border-l border-slate-800">
-              <li className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors">
-                GET /api/v1/latest
-              </li>
-              <li className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors">
-                GET /api/v1/metrics
-              </li>
-              <li className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors">
-                WS /ws/stream
-              </li>
-            </ul>
+const DocsSection = () => {
+  const scrollToSection = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 80; // Navbar height + padding
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  return (
+    <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-screen">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        {/* Sidebar Navigation */}
+        <div className="lg:col-span-3 hidden lg:block">
+          <div className="sticky top-24 space-y-8">
+            <div>
+              <h5 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
+                快速開始
+              </h5>
+              <ul className="space-y-2 border-l border-slate-800">
+                <li
+                  onClick={() => scrollToSection("intro")}
+                  className="pl-4 border-l-2 border-emerald-500 text-emerald-400 font-medium cursor-pointer hover:text-emerald-300 transition-colors"
+                >
+                  簡介
+                </li>
+                <li
+                  onClick={() => scrollToSection("auth")}
+                  className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors"
+                >
+                  認證 (Authentication)
+                </li>
+                <li
+                  onClick={() => scrollToSection("rate-limits")}
+                  className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors"
+                >
+                  頻率限制 (Rate Limits)
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
+                端點 (Endpoints)
+              </h5>
+              <ul className="space-y-2 border-l border-slate-800">
+                <li
+                  onClick={() => scrollToSection("endpoint-latest")}
+                  className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors"
+                >
+                  GET /api/v1/latest
+                </li>
+                <li
+                  onClick={() => scrollToSection("endpoint-metrics")}
+                  className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors"
+                >
+                  GET /api/v1/metrics
+                </li>
+                <li
+                  onClick={() => scrollToSection("endpoint-ws")}
+                  className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors"
+                >
+                  WS /ws/stream
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="lg:col-span-9">
-        <div className="prose prose-invert max-w-none">
-          <h1 className="text-3xl font-bold text-white mb-6">
-            API 開發者文檔{" "}
-            <span className="text-emerald-500 text-sm align-middle bg-emerald-500/10 px-2 py-1 rounded ml-2">
-              v2.3
-            </span>
-          </h1>
-          <p className="text-slate-400 text-lg mb-8">
-            FlashRates API
-            支援同時請求多種貴金屬與法幣匯率數據。透過在參數中指定多個{" "}
-            <code>symbol</code>， 您可以在單次請求中獲取整個市場的即時快照。
-          </p>
-
-          <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <ShieldCheck className="text-emerald-400 w-5 h-5" />
-              支援的資產 (Supported Assets)
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
-                <div className="text-emerald-400 font-bold">XAU-USD</div>
-                <div className="text-xs text-slate-500">黃金 / 美元</div>
-              </div>
-              <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
-                <div className="text-emerald-400 font-bold">XAG-USD</div>
-                <div className="text-xs text-slate-500">白銀 / 美元</div>
-              </div>
-              <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
-                <div className="text-slate-500 font-bold">XPT-USD</div>
-                <div className="text-xs text-slate-600">白金 / 美元 (Pro)</div>
-              </div>
-              <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
-                <div className="text-green-500 font-bold">USD-TWD</div>
-                <div className="text-xs text-slate-600">美元 / 台幣</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <ShieldCheck className="text-emerald-400 w-5 h-5" />
-              認證與 API Key 管理
-            </h2>
-            <p className="text-slate-400 mb-4">
-              本服務使用 API Key 驗證，REST 與 WebSocket 都需要授權。若未設定
-              <code>API_KEYS</code>，開發環境預設不強制驗證。
+        {/* Main Content */}
+        <div className="lg:col-span-9">
+          <div className="prose prose-invert max-w-none">
+            <h1 id="intro" className="text-3xl font-bold text-white mb-6 scroll-mt-24">
+              API 開發者文檔{" "}
+              <span className="text-emerald-500 text-sm align-middle bg-emerald-500/10 px-2 py-1 rounded ml-2">
+                v2.5
+              </span>
+            </h1>
+            <p className="text-slate-400 text-lg mb-8">
+              FlashRates API
+              支援同時請求多種貴金屬與法幣匯率數據。透過在參數中指定多個{" "}
+              <code>symbol</code>， 您可以在單次請求中獲取整個市場的即時快照。
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-slate-950 p-4 rounded border border-slate-800">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  REST Header
+
+            <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12">
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <ShieldCheck className="text-emerald-400 w-5 h-5" />
+                支援的資產 (Supported Assets)
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-emerald-400 font-bold">XAU-USD</div>
+                  <div className="text-xs text-slate-500">黃金 / 美元</div>
                 </div>
-                <pre className="text-sm text-slate-300 font-mono">
-                  {`X-API-Key: YOUR_API_KEY
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-emerald-400 font-bold">XAG-USD</div>
+                  <div className="text-xs text-slate-500">白銀 / 美元</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-green-500 font-bold">USD-TWD</div>
+                  <div className="text-xs text-slate-600">美元 / 台幣</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="auth" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <ShieldCheck className="text-emerald-400 w-5 h-5" />
+                認證與 API Key 管理
+              </h2>
+              <p className="text-slate-400 mb-4">
+                本服務使用 API Key 驗證，REST 與 WebSocket 都需要授權。若未設定
+                <code>API_KEYS</code>，則視為開放模式（不強制驗證）。
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-slate-950 p-4 rounded border border-slate-800">
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    REST Header
+                  </div>
+                  <pre className="text-sm text-slate-300 font-mono">
+                    {`X-API-Key: YOUR_API_KEY
 Authorization: Bearer YOUR_API_KEY`}
-                </pre>
-              </div>
-              <div className="bg-slate-950 p-4 rounded border border-slate-800">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  WebSocket Query
+                  </pre>
                 </div>
-                <pre className="text-sm text-slate-300 font-mono">
-                  {`ws://localhost:8000/ws/stream?api_key=YOUR_API_KEY`}
-                </pre>
-              </div>
-            </div>
-            <div className="mt-6 bg-slate-950 p-4 rounded border border-slate-800">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                API Key 產生工具
-              </div>
-              <pre className="text-sm text-slate-300 font-mono">
-                {`python backend/tools/api_key_tool.py --count 3 --length 32 --prefix fr_
-
-API_KEYS=fr_xxx,fr_yyy,fr_zzz`}
-              </pre>
-            </div>
-          </div>
-
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-6">
-              批量獲取匯率 (Batch Request)
-            </h2>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <p className="text-slate-400">
-                  使用逗號分隔符來請求多個貨幣對。
-                </p>
-                <div className="flex items-center gap-3">
-                  <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded text-sm font-bold border border-emerald-500/20">
-                    GET
-                  </span>
-                  <code className="text-slate-200 bg-slate-800 px-2 py-1 rounded">
-                    /api/v1/latest?symbols=xau-usd,xag-usd
-                  </code>
-                </div>
-
-                <h4 className="font-bold text-white mt-6 mb-2">
-                  查詢參數 (Query Parameters)
-                </h4>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex gap-4 border-b border-slate-800 pb-2">
-                    <span className="font-mono text-emerald-400 w-24">
-                      symbols
-                    </span>
-                    <span className="text-slate-400">
-                      逗號分隔的代碼 (e.g. xau-usd,xag-usd)
-                    </span>
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <CodeBlock />
-                <div className="mt-4">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Example Response
-                  </h4>
-                  <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto">
-                    {`{
-  "timestamp": 1709823456,
-  "data": {
-    "XAU-USD": {
-      "price": 2650.45,
-      "change": 0.15,
-      "sources": 8
-    },
-    "XAG-USD": {
-      "price": 31.42,
-      "change": -0.05,
-      "sources": 6
-    },
-    "USD-TWD": {
-      "price": 31.85,
-      "change": 0.02,
-      "sources": 4
-    }
-  }
-}`}
+                <div className="bg-slate-950 p-4 rounded border border-slate-800">
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    WebSocket Query
+                  </div>
+                  <pre className="text-sm text-slate-300 font-mono">
+                    {`ws://localhost:8000/ws/stream?api_key=YOUR_API_KEY`}
                   </pre>
                 </div>
               </div>
-            </div>
-          </div>
+              <div className="mt-6 bg-slate-950 p-4 rounded border border-slate-800">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  API Key 產生工具
+                </div>
+                <pre className="text-sm text-slate-300 font-mono">
+                  {`python backend/tools/api_key_tool.py --count 3 --length 32 --prefix fr_
 
-          <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12">
-            <h2 className="text-xl font-bold text-white mb-4">認證與限制</h2>
-            <ul className="text-sm text-slate-400 space-y-2">
-              <li>
-                REST Header：
-                <span className="font-mono text-slate-200">
-                  X-API-Key: &lt;YOUR_API_KEY&gt;
+API_KEYS=fr_xxx,fr_yyy,fr_zzz`}
+                </pre>
+              </div>
+            </div>
+
+            <div id="endpoint-latest" className="mb-12 scroll-mt-24">
+              <h2 className="text-2xl font-bold text-white mb-6">
+                批量獲取匯率 (Batch Request)
+              </h2>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <p className="text-slate-400">
+                    使用逗號分隔符來請求多個貨幣對。
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded text-sm font-bold border border-emerald-500/20">
+                      GET
+                    </span>
+                    <code className="text-slate-200 bg-slate-800 px-2 py-1 rounded">
+                      /api/v1/latest?symbols=xau-usd,xag-usd
+                    </code>
+                  </div>
+
+                  <h4 className="font-bold text-white mt-6 mb-2">
+                    查詢參數 (Query Parameters)
+                  </h4>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex gap-4 border-b border-slate-800 pb-2">
+                      <span className="font-mono text-emerald-400 w-24">
+                        symbols
+                      </span>
+                      <span className="text-slate-400">
+                        逗號分隔的代碼 (e.g. xau-usd,xag-usd,usd-twd)
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <CodeBlock />
+                  <div className="mt-4">
+                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Example Response
+                    </h4>
+                    <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto">
+                      {`{
+  "timestamp": 1709823456,
+  "data": {
+    "XAU-USD": {
+      "symbol": "XAU-USD",
+      "price": 2650.45,
+      "timestamp": 1709823454,
+      "sources": 8,
+      "details": ["Binance", "BullionVault", "Sina Finance"],
+      "fastest": "Binance",
+      "fastestLatency": 42.3,
+      "avgLatency": 88.4
+    },
+    "XAG-USD": {
+      "symbol": "XAG-USD",
+      "price": 31.42,
+      "timestamp": 1709823454,
+      "sources": 6,
+      "details": ["GoldPrice.org", "Sina Finance"],
+      "fastest": "Sina Finance",
+      "fastestLatency": 58.1,
+      "avgLatency": 132.6
+    },
+    "USD-TWD": {
+      "symbol": "USD-TWD",
+      "price": 31.85,
+      "timestamp": 1709823455,
+      "sources": 4,
+      "details": ["OANDA", "Taiwan Bank"],
+      "fastest": "OANDA",
+      "fastestLatency": 36.7,
+      "avgLatency": 76.2
+    }
+  }
+}`}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="rate-limits" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">
+              <h2 className="text-xl font-bold text-white mb-4">認證與限制</h2>
+              <ul className="text-sm text-slate-400 space-y-2">
+                <li>
+                  REST Header：
+                  <span className="font-mono text-slate-200">
+                    X-API-Key: &lt;YOUR_API_KEY&gt;
+                  </span>
+                </li>
+                <li>
+                  WebSocket：
+                  <span className="font-mono text-slate-200">
+                    ws://localhost:8000/ws/stream?api_key=&lt;YOUR_API_KEY&gt;
+                  </span>
+                </li>
+                <li>Rate Limit：預設每分鐘 120 次 + 30 次突發</li>
+                <li>若未設定 API_KEYS，則視為開放模式（不驗證）。</li>
+                <li>錯誤碼：401 無效金鑰 / 403 金鑰停用 / 429 超出頻率</li>
+                <li>
+                  管理端：使用{" "}
+                  <span className="font-mono text-slate-200">ADMIN_API_KEYS</span>{" "}
+                  驗證
+                </li>
+              </ul>
+            </div>
+
+            <div id="endpoint-metrics" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">
+              <h2 className="text-xl font-bold text-white mb-4">
+                系統監控 (Metrics)
+              </h2>
+              <p className="text-slate-400 mb-4">
+                取得來源成功率、平均延遲與聚合統計。
+              </p>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded text-sm font-bold border border-emerald-500/20">
+                  GET
                 </span>
-              </li>
-              <li>
-                WebSocket：
-                <span className="font-mono text-slate-200">
-                  ws://localhost:8000/ws/stream?api_key=&lt;YOUR_API_KEY&gt;
-                </span>
-              </li>
-              <li>Rate Limit：預設每分鐘 120 次 + 30 次突發</li>
-              <li>
-                管理端：使用{" "}
-                <span className="font-mono text-slate-200">ADMIN_API_KEYS</span>{" "}
-                驗證
-              </li>
-            </ul>
+                <code className="text-slate-200 bg-slate-800 px-2 py-1 rounded">
+                  /api/v1/metrics
+                </code>
+              </div>
+              <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto">
+                {`{
+  "startTime": 1709820000.12,
+  "uptimeSeconds": 3456.78,
+  "totals": {
+    "sourceSuccess": 1024,
+    "sourceFailure": 12,
+    "aggregateSuccess": 980
+  },
+  "sources": {
+    "Binance": {"success": 120, "failure": 1, "avgLatencyMs": 45.2}
+  },
+  "aggregates": {
+    "XAU-USD": {"count": 320, "avgLatencyMs": 88.4, "lastSources": 8}
+  }
+}`}
+              </pre>
+            </div>
+
+            <div id="endpoint-ws" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">
+              <h2 className="text-xl font-bold text-white mb-4">
+              WebSocket 即時推送
+            </h2>
+            <p className="text-slate-400 mb-4">
+              連線後會訂閱三個頻道：XAU-USD、XAG-USD、USD-TWD。
+              伺服器會推送各資產的最新聚合結果。
+            </p>
+            <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto">
+              {`ws://localhost:8000/ws/stream?api_key=YOUR_API_KEY
+
+// 伺服器推送範例
+{
+  "symbol": "XAU-USD",
+  "price": 2650.45,
+  "timestamp": 1709823454,
+  "sources": 8,
+  "details": ["Binance", "BullionVault"],
+  "fastest": "Binance",
+  "fastestLatency": 42.3,
+  "avgLatency": 88.4
+}`}
+            </pre>
           </div>
 
           <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12">
@@ -836,6 +987,7 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz`}
     </div>
   </div>
 );
+};
 
 const AdminSection = () => {
   const [adminKey, setAdminKey] = useState("");
@@ -957,9 +1109,47 @@ const AdminSection = () => {
           WebSocket。
         </p>
 
+        <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 text-sm text-slate-400 mb-6 space-y-2">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            使用步驟
+          </div>
+          <ol className="list-decimal list-inside space-y-1">
+            <li>
+              在 .env 設定{" "}
+              <span className="font-mono text-slate-200">ADMIN_API_KEYS</span>。
+            </li>
+            <li>輸入管理員 API Key 後按「載入金鑰」。</li>
+            <li>可新增、停用、啟用或移除金鑰。</li>
+          </ol>
+          <div className="text-xs text-slate-500">
+            備註：REST/WS 一律使用{" "}
+            <span className="font-mono text-slate-200">X-API-Key</span> 或
+            Bearer 方式驗證。
+          </div>
+        </div>
+
         <div className="bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-xs text-slate-400 mb-6">
           Redis 新增/移除的 key 只在本次服務期間生效；請同步到 .env
           並重啟以持久化。
+        </div>
+
+        <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 text-xs text-slate-400 mb-6 space-y-2">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            管理端 API 端點
+          </div>
+          <div className="font-mono text-slate-300">GET /api/v1/admin/keys</div>
+          <div className="font-mono text-slate-300">
+            POST /api/v1/admin/keys/add
+          </div>
+          <div className="font-mono text-slate-300">
+            POST /api/v1/admin/keys/remove
+          </div>
+          <div className="font-mono text-slate-300">
+            POST /api/v1/admin/keys/disable
+          </div>
+          <div className="font-mono text-slate-300">
+            POST /api/v1/admin/keys/enable
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center mb-6">
@@ -1095,10 +1285,10 @@ export default function App() {
             <span className="text-slate-300 font-bold">FlashRates.WANG</span>
           </div>
           <div className="text-slate-500 text-sm">
-            © 2026 High-Freq Data Systems. All rights reserved.
+            © 2026 High-Freq Data abcabc_wang_1688 Systems. All rights reserved.
           </div>
           <div className="flex gap-6 text-slate-400">
-            <a href="#" className="hover:text-emerald-400 transition-colors">
+            <a href="https://github.com/colinjen88/FlashRates" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">
               GitHub
             </a>
           </div>
