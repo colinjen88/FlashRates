@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+redis
+aiohttp
+beautifulsoup4
+playwright
+requests
+pydantic-settings
+python-dotenv
+fakeredis
