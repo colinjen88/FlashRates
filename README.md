@@ -310,7 +310,7 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 
 | 來源                  | 類型       | 輪詢間隔 | 偏移量 | 權重 | 支援資產          |
 | --------------------- | ---------- | -------- | ------ | ---- | ----------------- |
-| **Binance**           | Crypto API | 2s       | 0s     | 0.8  | XAU, XAG (USDT)   |
+| **Binance**           | Crypto/Future| 2s       | 0s     | 0.8  | PAXG, XAU-F, XAG-F|
 | **GoldPrice.org**     | JSON API   | 15s      | 1s     | 0.6  | XAU, XAG          |
 | **新浪財經**          | HTTP       | 5s       | 0.5s   | 0.6  | XAU, XAG, USD-TWD |
 | **Gold-API**          | REST API   | 30s      | 40s    | 0.6  | XAU, XAG          |
@@ -359,7 +359,10 @@ T=5.0s: Yahoo Finance 請求
 ### 儀表板 (Dashboard)
 
 1. **多資產即時看板**
-   - 三欄式 Grid 佈局：黃金、白銀、美元匯率
+   - 三欄式 Grid 佈局：市場概覽、黃金、白銀
+   - 市場概覽包含：TradingView 走勢圖、美元匯率、PAXG 代幣
+   - 黃金區塊包含：黃金現貨、黃金期貨、幣安黃金合約
+   - 白銀區塊包含：白銀現貨、白銀期貨、幣安白銀合約
    - 價格變動時背景閃爍動畫 (綠漲/紅跌)
    - 顯示漲跌幅百分比
 
@@ -450,6 +453,7 @@ python -m pytest tests/test_system.py -v
 
 | 版本 | 日期       | 說明                  |
 | ---- | ---------- | --------------------- |
+| v2.6 | 2026-01-20 | 新增幣安合約 (Futures) 支援 (XAU-USDT, XAG-USDT)；修正新浪財經解析；優化儀表板佈局 (Overview 整合 PAXG) |
 | v2.5 | 2026-01-20 | 擴展數據源至 15 個：新增 Gold-API, APMEX 來源；新浪財經補齊現貨報價 |
 | v2.4 | 2026-01-20 | 新增 TradingView 黃金/白銀走勢圖 (Iframe)；新增幣安白銀 (XAG-USDT)；即時性顏色指標 (綠/橘/紅/紫)；介面優化 |
 | v2.3 | 2026-01-20 | 新增期貨(GC-F, SI-F)、PAXG 報價；Docker 部署至 liro.world |

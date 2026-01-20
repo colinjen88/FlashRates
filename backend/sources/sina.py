@@ -61,8 +61,9 @@ class SinaFinanceSource(BaseSource):
                     # 對於 hf_GC，index 0 是價格
                     try:
                         if ':' in data[0]:
-                            # 格式: Time, Bid, Ask, Last, ...
-                            price = float(data[3]) if data[3] else float(data[1])
+                            # 格式: Time(0), Price(1), ...? (Previous observation suggests index 3 was PrevClose)
+                            # For fx_sxauusd, index 1 is ~4739 (aligned with market), index 3 is ~4672 (lagging/low).
+                            price = float(data[1])
                         else:
                             # 格式: Last, ...
                             price = float(data[0])

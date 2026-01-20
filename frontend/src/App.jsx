@@ -340,6 +340,7 @@ const DashboardSection = () => {
     "GC-F": 3,
     "SI-F": 3,
     "XAG-USDT": 1, // Binance Silver
+    "XAU-USDT": 1, // Binance Gold
   };
 
   useEffect(() => {
@@ -441,7 +442,7 @@ const DashboardSection = () => {
 
       {/* 第一排：市場概覽 (TradingView + USD/FX) */}
       <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">市場概覽 (Overview)</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-8">
          {/* TradingView Widget */}
          <div className="w-full">
             <TradingViewWidget />
@@ -461,6 +462,22 @@ const DashboardSection = () => {
           supportedCount={supportedCounts["USD-TWD"]}
           sources={marketData["USD-TWD"]?.details}
           isMarketOpen={marketData["USD-TWD"]?.is_market_open}
+        />
+        {/* PAXG Moved Here */}
+        <AssetCard
+          name="PAXG 代幣"
+          symbol="PAXG-USD"
+          price={marketData["PAXG-USD"]?.price}
+          prevPrice={prevMarketData["PAXG-USD"]}
+          timestamp={marketData["PAXG-USD"]?.timestamp}
+          source={marketData["PAXG-USD"]?.details?.[0]}
+          fastest={marketData["PAXG-USD"]?.fastest}
+          fastestLatency={marketData["PAXG-USD"]?.fastestLatency}
+          avgLatency={marketData["PAXG-USD"]?.avgLatency}
+          sourcesCount={marketData["PAXG-USD"]?.sources}
+          supportedCount={supportedCounts["PAXG-USD"]}
+          sources={marketData["PAXG-USD"]?.details}
+          isMarketOpen={true}
         />
       </div>
 
@@ -498,18 +515,18 @@ const DashboardSection = () => {
           isMarketOpen={marketData["GC-F"]?.is_market_open}
         />
         <AssetCard
-          name="PAXG 代幣"
-          symbol="PAXG-USD"
-          price={marketData["PAXG-USD"]?.price}
-          prevPrice={prevMarketData["PAXG-USD"]}
-          timestamp={marketData["PAXG-USD"]?.timestamp}
-          source={marketData["PAXG-USD"]?.details?.[0]}
-          fastest={marketData["PAXG-USD"]?.fastest}
-          fastestLatency={marketData["PAXG-USD"]?.fastestLatency}
-          avgLatency={marketData["PAXG-USD"]?.avgLatency}
-          sourcesCount={marketData["PAXG-USD"]?.sources}
-          supportedCount={supportedCounts["PAXG-USD"]}
-          sources={marketData["PAXG-USD"]?.details}
+          name="幣安合約"
+          symbol="XAU-USDT"
+          price={marketData["XAU-USDT"]?.price}
+          prevPrice={prevMarketData["XAU-USDT"]}
+          timestamp={marketData["XAU-USDT"]?.timestamp}
+          source={marketData["XAU-USDT"]?.details?.[0]}
+          fastest={marketData["XAU-USDT"]?.fastest}
+          fastestLatency={marketData["XAU-USDT"]?.fastestLatency}
+          avgLatency={marketData["XAU-USDT"]?.avgLatency}
+          sourcesCount={marketData["XAU-USDT"]?.sources}
+          supportedCount={supportedCounts["XAU-USDT"]}
+          sources={marketData["XAU-USDT"]?.details}
           isMarketOpen={true}
         />
       </div>
@@ -548,7 +565,7 @@ const DashboardSection = () => {
           isMarketOpen={marketData["SI-F"]?.is_market_open}
         />
         <AssetCard
-          name="幣安白銀"
+          name="幣安合約"
           symbol="XAG-USDT"
           price={marketData["XAG-USDT"]?.price}
           prevPrice={prevMarketData["XAG-USDT"]}
@@ -562,6 +579,7 @@ const DashboardSection = () => {
           sources={marketData["XAG-USDT"]?.details}
           isMarketOpen={true}
         />
+
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
