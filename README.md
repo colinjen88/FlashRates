@@ -1,4 +1,4 @@
-# FlashRates - 高頻匯率數據聚合系統 v2.3
+# FlashRates - 高頻匯率數據聚合系統 v2.5
 
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)]()
@@ -6,7 +6,7 @@
 
 **即時監控黃金 (XAU, GC-F, PAXG)、白銀 (XAG, SI-F) 與美元匯率 (USD/TWD) 的高頻數據聚合平台。**
 
-採用「分散式採集、中心化聚合」模式，從 10 個異構數據源同步抓取報價，實現亞秒級更新。
+採用「分散式採集、中心化聚合」模式，從 15 個異構數據源同步抓取報價，實現亞秒級更新。
 
 ---
 
@@ -310,9 +310,11 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 
 | 來源                  | 類型       | 輪詢間隔 | 偏移量 | 權重 | 支援資產          |
 | --------------------- | ---------- | -------- | ------ | ---- | ----------------- |
-| **Binance**           | Crypto API | 2s       | 0s     | 0.8  | XAU               |
+| **Binance**           | Crypto API | 2s       | 0s     | 0.8  | XAU, XAG (USDT)   |
 | **GoldPrice.org**     | JSON API   | 15s      | 1s     | 0.6  | XAU, XAG          |
 | **新浪財經**          | HTTP       | 5s       | 0.5s   | 0.6  | XAU, XAG, USD-TWD |
+| **Gold-API**          | REST API   | 30s      | 40s    | 0.6  | XAU, XAG          |
+| **APMEX**             | Scrape     | 60s      | 50s    | 0.5  | XAU, XAG          |
 | **BullionVault**      | XML API    | 10s      | 2s     | 0.7  | XAU               |
 | **Yahoo Finance**     | REST API   | 60s      | 5s     | 0.5  | XAU, XAG, USD-TWD |
 | **Kitco**             | HTML 爬蟲  | 60s      | 10s    | 0.4  | XAU, XAG          |
@@ -321,6 +323,8 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 | **Taiwan Bank**       | CSV        | 60s      | 20s    | 0.7  | USD-TWD           |
 | **exchangerate.host** | REST API   | 30s      | 12s    | 0.5  | USD-TWD           |
 | **open.er-api.com**   | REST API   | 60s      | 25s    | 0.5  | USD-TWD           |
+| **Fawaz API**         | CDN        | 1h       | 30s    | 0.3  | USD-TWD           |
+| **FloatRates**        | Feed       | 1h       | 45s    | 0.3  | USD-TWD           |
 | **Mock**              | 測試       | 2s       | 0s     | 0.3  | 全部              |
 
 ### 可加入的免費即時匯率來源（候選）
@@ -446,6 +450,7 @@ python -m pytest tests/test_system.py -v
 
 | 版本 | 日期       | 說明                  |
 | ---- | ---------- | --------------------- |
+| v2.5 | 2026-01-20 | 擴展數據源至 15 個：新增 Gold-API, APMEX 來源；新浪財經補齊現貨報價 |
 | v2.4 | 2026-01-20 | 新增 TradingView 黃金/白銀走勢圖 (Iframe)；新增幣安白銀 (XAG-USDT)；即時性顏色指標 (綠/橘/紅/紫)；介面優化 |
 | v2.3 | 2026-01-20 | 新增期貨(GC-F, SI-F)、PAXG 報價；Docker 部署至 liro.world |
 | v2.0 | 2026-01-17 | 完整實作 8 源聚合系統 |

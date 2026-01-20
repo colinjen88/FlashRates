@@ -37,6 +37,8 @@ from backend.sources.exchangerate_host import ExchangerateHostSource
 from backend.sources.open_er_api import OpenErApiSource
 from backend.sources.fawazahmed import FawazahmedSource
 from backend.sources.floatrates import FloatRatesSource
+from backend.sources.gold_api import GoldApiSource
+from backend.sources.apmex import ApmexSource
 # from backend.sources.mock import MockSource
 from backend.aggregator import Aggregator
 from backend.scheduler import Scheduler
@@ -52,14 +54,16 @@ async def startup_event():
     global investing_source
     investing_source = InvestingSource()
     
-    # 初始化所有 12 個數據源 (超規格配置)
+    # 初始化所有 15 個數據源 (超規格配置)
     sources = [
         BinanceSource(),           # 1. Binance PAXG (高頻，黃金)
         GoldPriceOrgSource(),      # 2. GoldPrice.org (黃金、白銀)
         SinaFinanceSource(),       # 3. 新浪財經 (全部)
-        BullionVaultSource(),      # 4. BullionVault (黃金)
-        YahooFinanceSource(),      # 5. Yahoo Finance (全部)
-        KitcoSource(),             # 6. Kitco (黃金、白銀)
+        GoldApiSource(),           # 4. Gold-API (新增)
+        ApmexSource(),             # 5. APMEX (新增)
+        BullionVaultSource(),      # 6. BullionVault (黃金)
+        YahooFinanceSource(),      # 7. Yahoo Finance (全部)
+        KitcoSource(),             # 8. Kitco (黃金、白銀)
         investing_source,          # 7. Investing.com (全部，Playwright)
         OandaSource(),             # 8. OANDA (外匯)
         TaiwanBankSource(),        # 9. 台灣銀行 (USD-TWD 官方備援)
@@ -99,7 +103,7 @@ async def shutdown_event():
 
 @app.get("/")
 async def root():
-    return {"status": "ok", "app": settings.APP_NAME, "sources": 14}
+    return {"status": "ok", "app": settings.APP_NAME, "sources": 15}
 
 @app.get("/api/v1/latest")
 async def get_latest(symbols: str = "xau-usd,xag-usd,usd-twd,paxg-usd,gc-f,si-f,xag-usdt", api_key: str = Depends(verify_api_key)):

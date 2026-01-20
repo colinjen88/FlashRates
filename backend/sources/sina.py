@@ -24,14 +24,14 @@ class SinaFinanceSource(BaseSource):
         sina_symbol = None
         if "USD" in symbol and "TWD" in symbol:
             sina_symbol = "fx_susdtwd"  # 美元/台幣
+        elif symbol == "XAU-USD":
+            sina_symbol = "fx_sxauusd"  # 黃金現貨 (新浪計算)
+        elif symbol == "XAG-USD":
+            sina_symbol = "fx_sxagusd"  # 白銀現貨 (新浪計算)
         elif symbol == "GC-F":
             sina_symbol = "hf_GC"       # 黃金期貨
         elif symbol == "SI-F":
             sina_symbol = "hf_SI"       # 白銀期貨
-        else:
-            # 暫時移除 Sina 的貴金屬期貨，避免與現貨混淆
-            # hf_GC / hf_SI 是期貨數據
-            return None
             
         if not sina_symbol:
             return None

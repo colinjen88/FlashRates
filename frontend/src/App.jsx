@@ -333,9 +333,9 @@ const DashboardSection = () => {
   const marketDataRef = useRef({});
 
   const supportedCounts = {
-    "XAU-USD": 8,
-    "XAG-USD": 7,
-    "USD-TWD": 12, // 增加到 12 個來源
+    "XAU-USD": 10,  // 增加到 10 個來源 (新增 Gold-API, APMEX, Sina Spot)
+    "XAG-USD": 9,   // 增加到 9 個來源 (新增 Gold-API, APMEX, Sina Spot)
+    "USD-TWD": 12, // 12 個來源
     "PAXG-USD": 1,
     "GC-F": 3,
     "SI-F": 3,

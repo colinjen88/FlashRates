@@ -40,6 +40,8 @@ SOURCE_CONFIG = {
     "open.er-api.com": {"interval": 60, "offset": 25, "max_age": 180},
     "Fawaz API": {"interval": 3600, "offset": 30, "max_age": 10800},   # CDN 更新較慢 (每小時)
     "FloatRates": {"interval": 3600, "offset": 45, "max_age": 10800},  # 每日更新 (每小時候polling即可)
+    "Gold-API": {"interval": 30, "offset": 40, "max_age": 90},
+    "APMEX": {"interval": 60, "offset": 50, "max_age": 180},
 }
 
 class Scheduler:
