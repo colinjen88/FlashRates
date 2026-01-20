@@ -3,7 +3,7 @@ import aiohttp
 import time
 import logging
 from backend.sources.base import BaseSource
-from backend.utils import get_json
+from backend.http_client import get_json
 
 logger = logging.getLogger(__name__)
 

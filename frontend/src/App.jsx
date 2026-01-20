@@ -360,6 +360,24 @@ const DashboardSection = () => {
       // 確保後端 (backend/main.py) 已啟動 (uvicorn backend.main:app --reload)
       // 目前後端預設設定 (config.py) 允許任意 API Key，除非在 .env 設定了鎖定。
       const apiKey = "dev_key";
+      
+      // 1. Initial Fetch (防止 WebSocket 連線前空白)
+      fetch(`http://localhost:8000/api/v1/latest?symbols=XAU-USD,XAG-USD,USD-TWD,PAXG-USD,GC-F,SI-F,XAG-USDT,XAU-USDT,DXY,US10Y,HG-F,CL-F,VIX,GDX,SIL`, {
+        headers: { 'X-API-Key': apiKey }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.data) {
+           const initialData = {};
+           Object.keys(data.data).forEach(key => {
+             initialData[key] = data.data[key];
+           });
+           setMarketData(prev => ({...prev, ...initialData}));
+           marketDataRef.current = {...marketDataRef.current, ...initialData};
+        }
+      })
+      .catch(err => console.error("Initial fetch error:", err));
+
       // 自動判斷 WebSocket 網址
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const host = window.location.host; // liro.world
@@ -377,16 +395,7 @@ const DashboardSection = () => {
 
       ws.onmessage = (event) => {
         try {
-          // Assuming message is just value str in current backend placeholder or JSON
-          // In aggregator.py we send proper JSON str.
           const raw = event.data;
-          // Since main.py placeholder sends "Message text..." we ignore that logic
-          // and assume we will fix backend to send JSON or we handle Aggregator output.
-          // NOTE: My backend aggregator sends: redis_client.publish(..., str(output))
-          // The main.py websocket endpoint has a basic echo loop currently.
-          // **CORRECTION**: I need to update main.py to actually subscribe to Redis!
-          // For now, I will write the frontend assuming the backend sends valid JSON data streams.
-          // If it fails, it will just not update.
           if (raw.startsWith("{")) {
             const data = JSON.parse(raw);
             setPrevMarketData((prev) => ({
