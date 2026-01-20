@@ -20,8 +20,18 @@ import {
   Coins,
   ArrowUp,
   ArrowDown,
-  Banknote, // Added icon for Fiat currency
+  Banknote,
+  Lock,
+  Eye,
+  EyeOff,
+  User,
 } from "lucide-react";
+
+// --- 管理端登入憑證 ---
+const ADMIN_CREDENTIALS = {
+  username: "jenjen",
+  password: "FlashRates.WANG1",
+};
 
 // --- 模擬數據與配置 ---
 
@@ -66,15 +76,24 @@ socket.onmessage = (event) => {
 
 // --- 組件 ---
 
-const Navbar = ({ activeTab, setActiveTab }) => {
+const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
     { id: "dashboard", label: "實時監控" },
     { id: "features", label: "核心技術" },
     { id: "docs", label: "API 文件" },
-    { id: "admin", label: "管理端" },
+    { id: "admin", label: "管理端", protected: true },
   ];
+
+  const handleNavClick = (item) => {
+    if (item.protected && !isAdminLoggedIn) {
+      onAdminClick();
+    } else {
+      setActiveTab(item.id);
+    }
+    setIsOpen(false);
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
@@ -87,8 +106,11 @@ const Navbar = ({ activeTab, setActiveTab }) => {
             <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.4)]">
               <Zap className="text-slate-900 w-5 h-5 fill-current" />
             </div>
-            <span className="text-white font-bold text-xl tracking-tight">
+            <span className="text-white font-bold text-xl tracking-tight flex items-center gap-2">
               FlashRates<span className="text-emerald-500">.WANG</span>
+              <span className="text-[10px] text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded font-medium">
+                BETA
+              </span>
             </span>
           </div>
 
@@ -97,13 +119,14 @@ const Navbar = ({ activeTab, setActiveTab }) => {
               {navItems.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  onClick={() => handleNavClick(item)}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
                     activeTab === item.id
                       ? "text-emerald-400 bg-slate-800"
                       : "text-slate-300 hover:text-white hover:bg-slate-800"
                   }`}
                 >
+                  {item.protected && <Lock className="w-3 h-3" />}
                   {item.label}
                 </button>
               ))}
@@ -125,15 +148,13 @@ const Navbar = ({ activeTab, setActiveTab }) => {
       {isOpen && (
         <div className="md:hidden bg-slate-900 border-b border-slate-800">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {navItems.map((item) => (
+          {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  setIsOpen(false);
-                }}
-                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-slate-800"
+                onClick={() => handleNavClick(item)}
+                className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2"
               >
+                {item.protected && <Lock className="w-4 h-4" />}
                 {item.label}
               </button>
             ))}
@@ -141,6 +162,157 @@ const Navbar = ({ activeTab, setActiveTab }) => {
         </div>
       )}
     </nav>
+  );
+};
+
+// --- 登入彈窗組件 ---
+const LoginModal = ({ isOpen, onClose, onLogin }) => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    // 驗證帳號密碼
+    setTimeout(() => {
+      if (
+        username === ADMIN_CREDENTIALS.username &&
+        password === ADMIN_CREDENTIALS.password
+      ) {
+        onLogin();
+        setUsername("");
+        setPassword("");
+        onClose();
+      } else {
+        setError("帳號或密碼錯誤");
+      }
+      setIsLoading(false);
+    }, 500);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      {/* 背景遮罩 */}
+      <div
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* 彈窗內容 */}
+      <div className="relative bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        {/* 頂部裝飾 */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500" />
+
+        <div className="p-8">
+          {/* Logo 和標題 */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-emerald-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">管理端登入</h2>
+            <p className="text-slate-400 text-sm">
+              請輸入管理員帳號和密碼
+            </p>
+          </div>
+
+          {/* 表單 */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* 帳號輸入 */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                帳號
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="w-5 h-5 text-slate-500" />
+                </div>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+                  placeholder="請輸入帳號"
+                  autoComplete="username"
+                />
+              </div>
+            </div>
+
+            {/* 密碼輸入 */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                密碼
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="w-5 h-5 text-slate-500" />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+                  placeholder="請輸入密碼"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* 錯誤訊息 */}
+            {error && (
+              <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg px-4 py-3 text-rose-400 text-sm flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                {error}
+              </div>
+            )}
+
+            {/* 提交按鈕 */}
+            <button
+              type="submit"
+              disabled={isLoading || !username || !password}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  驗證中...
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-5 h-5" />
+                  登入管理端
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* 關閉按鈕 */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -205,7 +377,7 @@ const AssetCard = ({
               >
                 {hasData
                   ? isMarketOpen === false
-                    ? "停盤(場外交易)"
+                    ? "休市"
                     : "即時"
                   : "等待中"}
               </span>
@@ -446,15 +618,15 @@ const DashboardSection = () => {
               className={`relative inline-flex rounded-full h-1.5 w-1.5 ${isConnected ? "bg-emerald-500" : "bg-rose-500"}`}
             ></span>
           </span>
-          v2.3 更新: {isConnected ? "系統在線 (WebSocket 已連接)" : "連線中..."}
+          v2.9 更新: {isConnected ? "系統在線 (WebSocket 已連接)" : "連線中..."}
         </div>
         <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-3 tracking-tight leading-tight">
-          同步監控 <span className="text-yellow-400">黃金</span>、
+          即時追蹤 <span className="text-yellow-400">黃金</span>、
           <span className="text-slate-300">白銀</span> 與{" "}
-          <span className="text-green-400">匯率</span>
+          <span className="text-green-400">外匯</span> 行情
         </h1>
         <p className="text-sm text-slate-400 leading-relaxed max-w-2xl mx-auto">
-          多種數據來源錯開查詢，以降低更新秒數。
+          多源聚合、時間分片輪詢，縮短更新時間。
         </p>
       </div>
 
@@ -653,7 +825,7 @@ const DashboardSection = () => {
 };
 
 const CoreTechSection = () => (
-  <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto min-h-screen">
+  <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-[1440px] mx-auto min-h-screen">
     <div className="mb-10 text-center">
       <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-3">
         核心技術與方法
@@ -665,7 +837,7 @@ const CoreTechSection = () => (
 
     <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 sm:p-8 mb-8">
       <h2 className="text-xl font-bold text-white mb-6">資料流流程圖</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left: Professional Visual Diagram */}
         <div className="relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-1000"></div>
@@ -677,9 +849,9 @@ const CoreTechSection = () => (
         </div>
 
         {/* Right: Technical Detail (Original ASCII) */}
-        <div className="w-full">
+        <div className="w-full flex flex-col h-full">
           <h3 className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wider">Technical Flow</h3>
-          <pre className="text-xs sm:text-xs text-slate-300 bg-slate-950 border border-slate-800 rounded-lg p-4 overflow-x-auto font-mono leading-relaxed custom-scrollbar">
+          <pre className="text-xs sm:text-xs text-slate-300 bg-slate-950 border border-slate-800 rounded-lg p-4 overflow-x-auto font-mono leading-relaxed custom-scrollbar flex-1 flex items-center">
             {`Sources (Binance / GoldPrice / Sina / ...)
    │  async fetch (aiohttp / Playwright)
    ▼
@@ -702,39 +874,70 @@ React Dashboard / Admin`}
     </div>
 
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-white mb-3">資料採集與調度</h3>
-        <ul className="text-sm text-slate-400 space-y-2">
-          <li>asyncio 併發輪詢，每來源獨立 interval + offset 錯峰。</li>
-          <li>自適應輪詢：失敗自動降頻，成功逐步回到基準。</li>
-          <li>aiohttp 為主要抓取器，Playwright 處理防爬來源。</li>
-          <li>共用 HTTP session + retry/backoff 降低瞬時失敗。</li>
-        </ul>
+      {/* Card 1: 資料採集 */}
+      <div className="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden flex flex-col sm:flex-row h-full group">
+        <div className="w-full sm:w-1/3 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-r border-slate-800/50 flex items-center justify-center p-6 relative">
+          <div className="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors duration-500"></div>
+          <Zap className="w-12 h-12 text-blue-400/80 group-hover:scale-110 group-hover:text-blue-400 transition-all duration-500" />
+        </div>
+        <div className="w-full sm:w-2/3 p-6 flex flex-col justify-center">
+          <h3 className="text-lg font-bold text-white mb-3">資料採集與調度</h3>
+          <ul className="text-sm text-slate-400 space-y-2">
+            <li>asyncio 併發輪詢，每來源獨立 interval + offset 錯峰。</li>
+            <li>自適應輪詢：失敗自動降頻，成功逐步回到基準。</li>
+            <li>aiohttp 為主要抓取器，Playwright 處理防爬來源。</li>
+            <li>共用 HTTP session + retry/backoff 降低瞬時失敗。</li>
+          </ul>
+        </div>
       </div>
-      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-white mb-3">聚合與品質控制</h3>
-        <ul className="text-sm text-slate-400 space-y-2">
-          <li>加權平均：高可信來源權重較高。</li>
-          <li>中位數偏離 0.3% 的來源自動剔除。</li>
-          <li>新鮮度衰減 + max_age 淘汰過期資料。</li>
-          <li>最快來源與加權平均延遲（前 5 快來源）。</li>
-        </ul>
+
+      {/* Card 2: 聚合 */}
+      <div className="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden flex flex-col sm:flex-row h-full group">
+        <div className="w-full sm:w-1/3 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-r border-slate-800/50 flex items-center justify-center p-6 relative">
+          <div className="absolute inset-0 bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors duration-500"></div>
+          <Layers className="w-12 h-12 text-emerald-400/80 group-hover:scale-110 group-hover:text-emerald-400 transition-all duration-500" />
+        </div>
+        <div className="w-full sm:w-2/3 p-6 flex flex-col justify-center">
+          <h3 className="text-lg font-bold text-white mb-3">聚合與品質控制</h3>
+          <ul className="text-sm text-slate-400 space-y-2">
+            <li>加權平均：高可信來源權重較高。</li>
+            <li>中位數偏離 0.3% 的來源自動剔除。</li>
+            <li>新鮮度衰減 + max_age 淘汰過期資料。</li>
+            <li>最快來源與加權平均延遲（前 5 快來源）。</li>
+          </ul>
+        </div>
       </div>
-      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-white mb-3">可靠性機制</h3>
-        <ul className="text-sm text-slate-400 space-y-2">
-          <li>Circuit Breaker 熔斷失敗來源，定時半開重試。</li>
-          <li>FakeRedis 備援，避免 Redis 不可用造成服務失效。</li>
-          <li>metrics 記錄成功率與延遲，支援監控與調校。</li>
-        </ul>
+
+      {/* Card 3: 可靠性 */}
+      <div className="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden flex flex-col sm:flex-row h-full group">
+        <div className="w-full sm:w-1/3 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-r border-slate-800/50 flex items-center justify-center p-6 relative">
+          <div className="absolute inset-0 bg-orange-500/5 group-hover:bg-orange-500/10 transition-colors duration-500"></div>
+          <ShieldCheck className="w-12 h-12 text-orange-400/80 group-hover:scale-110 group-hover:text-orange-400 transition-all duration-500" />
+        </div>
+        <div className="w-full sm:w-2/3 p-6 flex flex-col justify-center">
+          <h3 className="text-lg font-bold text-white mb-3">可靠性機制</h3>
+          <ul className="text-sm text-slate-400 space-y-2">
+            <li>Circuit Breaker 熔斷失敗來源，定時半開重試。</li>
+            <li>FakeRedis 備援，避免 Redis 不可用造成服務失效。</li>
+            <li>metrics 記錄成功率與延遲，支援監控與調校。</li>
+          </ul>
+        </div>
       </div>
-      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-white mb-3">安全與存取控制</h3>
-        <ul className="text-sm text-slate-400 space-y-2">
-          <li>API Key 驗證 + Rate Limit（REST / WS 皆套用）。</li>
-          <li>管理端可列出、停用、啟用與新增 Redis key。</li>
-          <li>Redis 新增 key 需同步 .env 並重啟以持久化。</li>
-        </ul>
+
+      {/* Card 4: 安全 */}
+      <div className="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden flex flex-col sm:flex-row h-full group">
+        <div className="w-full sm:w-1/3 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-r border-slate-800/50 flex items-center justify-center p-6 relative">
+          <div className="absolute inset-0 bg-rose-500/5 group-hover:bg-rose-500/10 transition-colors duration-500"></div>
+          <Lock className="w-12 h-12 text-rose-400/80 group-hover:scale-110 group-hover:text-rose-400 transition-all duration-500" />
+        </div>
+        <div className="w-full sm:w-2/3 p-6 flex flex-col justify-center">
+          <h3 className="text-lg font-bold text-white mb-3">安全與存取控制</h3>
+          <ul className="text-sm text-slate-400 space-y-2">
+            <li>API Key 驗證 + Rate Limit（REST / WS 皆套用）。</li>
+            <li>管理端可列出、停用、啟用與新增 Redis key。</li>
+            <li>Redis 新增 key 需同步 .env 並重啟以持久化。</li>
+          </ul>
+        </div>
       </div>
     </div>
 
@@ -763,6 +966,33 @@ React Dashboard / Admin`}
           <li>自適應降頻與熔斷，降低被封鎖機率。</li>
           <li>低頻來源作備援，提高可用性與穩定性。</li>
         </ul>
+      </div>
+    </div>
+
+    <div className="mt-8 bg-slate-900/50 border border-slate-800 rounded-2xl p-6 sm:p-8">
+      <h2 className="text-xl font-bold text-white mb-6">市場時間判斷</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-white">貴金屬現貨 (XAU/XAG)</h3>
+          <ul className="text-sm text-slate-400 space-y-2">
+            <li>🟢 開市：週日 18:00 ET 至 週五 17:00 ET</li>
+            <li>⚠️ 每日休市 (Daily Break)：17:00 - 18:00 ET</li>
+            <li>🔴 週末休市：週五 17:00 - 週日 18:00 ET</li>
+            <li>🏝️ 美國假日：MLK Day、總統日、耶穌受難日等</li>
+          </ul>
+        </div>
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-white">夏/冬令時間</h3>
+          <ul className="text-sm text-slate-400 space-y-2">
+            <li>❄️ 冬令 (EST): UTC-5 (11月 - 3月)</li>
+            <li>☀️ 夏令 (EDT): UTC-4 (3月 - 11月)</li>
+            <li>系統使用 America/New_York 時區自動處理</li>
+          </ul>
+          <h3 className="text-lg font-bold text-white mt-4">24/7 資產</h3>
+          <ul className="text-sm text-slate-400 space-y-2">
+            <li>🟢 PAXG-USD、XAU-USDT、XAG-USDT (加密貨幣)</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -843,7 +1073,7 @@ const DocsSection = () => {
   };
 
   return (
-    <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-screen">
+    <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-[1440px] mx-auto min-h-screen">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         {/* Sidebar Navigation */}
         <div className="lg:col-span-3 hidden lg:block">
@@ -907,7 +1137,7 @@ const DocsSection = () => {
             <h1 id="intro" className="text-3xl font-bold text-white mb-6 scroll-mt-24">
               API 開發者文檔{" "}
               <span className="text-emerald-500 text-sm align-middle bg-emerald-500/10 px-2 py-1 rounded ml-2">
-                v2.5
+                v2.9
               </span>
             </h1>
             <p className="text-slate-400 text-lg mb-8">
@@ -921,18 +1151,66 @@ const DocsSection = () => {
                 <ShieldCheck className="text-emerald-400 w-5 h-5" />
                 支援的資產 (Supported Assets)
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
-                  <div className="text-emerald-400 font-bold">XAU-USD</div>
-                  <div className="text-xs text-slate-500">黃金 / 美元</div>
+                  <div className="text-yellow-400 font-bold">XAU-USD</div>
+                  <div className="text-xs text-slate-500">黃金現貨</div>
                 </div>
                 <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
-                  <div className="text-emerald-400 font-bold">XAG-USD</div>
-                  <div className="text-xs text-slate-500">白銀 / 美元</div>
+                  <div className="text-slate-300 font-bold">XAG-USD</div>
+                  <div className="text-xs text-slate-500">白銀現貨</div>
                 </div>
                 <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
                   <div className="text-green-500 font-bold">USD-TWD</div>
-                  <div className="text-xs text-slate-600">美元 / 台幣</div>
+                  <div className="text-xs text-slate-500">美元 / 台幣</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-yellow-400 font-bold">GC-F</div>
+                  <div className="text-xs text-slate-500">黃金期貨</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-slate-300 font-bold">SI-F</div>
+                  <div className="text-xs text-slate-500">白銀期貨</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-orange-400 font-bold">PAXG-USD</div>
+                  <div className="text-xs text-slate-500">黃金代幣 (24/7)</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-orange-400 font-bold">XAU-USDT</div>
+                  <div className="text-xs text-slate-500">幣安黃金 (24/7)</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-orange-400 font-bold">XAG-USDT</div>
+                  <div className="text-xs text-slate-500">幣安白銀 (24/7)</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-blue-400 font-bold">DXY</div>
+                  <div className="text-xs text-slate-500">美元指數</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-blue-400 font-bold">US10Y</div>
+                  <div className="text-xs text-slate-500">美債殖利率</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-red-400 font-bold">HG-F</div>
+                  <div className="text-xs text-slate-500">銅期貨</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-red-400 font-bold">CL-F</div>
+                  <div className="text-xs text-slate-500">原油期貨</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-purple-400 font-bold">VIX</div>
+                  <div className="text-xs text-slate-500">恐慧指數</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-yellow-400 font-bold">GDX</div>
+                  <div className="text-xs text-slate-500">金礦ETF</div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
+                  <div className="text-slate-300 font-bold">SIL</div>
+                  <div className="text-xs text-slate-500">銀礦ETF</div>
                 </div>
               </div>
             </div>
@@ -1028,7 +1306,8 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz`}
       "details": ["Binance", "BullionVault", "Sina Finance"],
       "fastest": "Binance",
       "fastestLatency": 42.3,
-      "avgLatency": 88.4
+      "avgLatency": 88.4,
+      "is_market_open": true
     },
     "XAG-USD": {
       "symbol": "XAG-USD",
@@ -1038,17 +1317,8 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz`}
       "details": ["GoldPrice.org", "Sina Finance"],
       "fastest": "Sina Finance",
       "fastestLatency": 58.1,
-      "avgLatency": 132.6
-    },
-    "USD-TWD": {
-      "symbol": "USD-TWD",
-      "price": 31.85,
-      "timestamp": 1709823455,
-      "sources": 4,
-      "details": ["OANDA", "Taiwan Bank"],
-      "fastest": "OANDA",
-      "fastestLatency": 36.7,
-      "avgLatency": 76.2
+      "avgLatency": 132.6,
+      "is_market_open": true
     }
   }
 }`}
@@ -1119,12 +1389,11 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz`}
             </div>
 
             <div id="endpoint-ws" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">
-              <h2 className="text-xl font-bold text-white mb-4">
+            <h2 className="text-xl font-bold text-white mb-4">
               WebSocket 即時推送
             </h2>
             <p className="text-slate-400 mb-4">
-              連線後會訂閱三個頻道：XAU-USD、XAG-USD、USD-TWD。
-              伺服器會推送各資產的最新聚合結果。
+              連線後會訂閱所有資產頻道，伺服器會推送各資產的最新聚合結果，包含 is_market_open 欄位。
             </p>
             <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto">
               {`ws://localhost:8000/ws/stream?api_key=YOUR_API_KEY
@@ -1294,7 +1563,7 @@ const AdminSection = () => {
   };
 
   return (
-    <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto min-h-screen">
+    <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-[1440px] mx-auto min-h-screen">
       <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-6 sm:p-8">
         <h1 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
           <ShieldCheck className="text-emerald-400 w-5 h-5" />
@@ -1457,10 +1726,34 @@ const AdminSection = () => {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const handleAdminClick = () => {
+    if (!isAdminLoggedIn) {
+      setShowLoginModal(true);
+    }
+  };
+
+  const handleLogin = () => {
+    setIsAdminLoggedIn(true);
+    setActiveTab("admin");
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-emerald-500/30">
-      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Navbar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isAdminLoggedIn={isAdminLoggedIn}
+        onAdminClick={handleAdminClick}
+      />
+
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLogin={handleLogin}
+      />
 
       <main className="relative">
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
@@ -1469,7 +1762,7 @@ export default function App() {
         {activeTab === "dashboard" && <DashboardSection />}
         {activeTab === "features" && <CoreTechSection />}
         {activeTab === "docs" && <DocsSection />}
-        {activeTab === "admin" && <AdminSection />}
+        {activeTab === "admin" && isAdminLoggedIn && <AdminSection />}
       </main>
 
       <footer className="bg-slate-900 border-t border-slate-800 py-12 mt-12 relative z-10">
@@ -1478,7 +1771,12 @@ export default function App() {
             <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center">
               <Zap className="text-emerald-500 w-4 h-4" />
             </div>
-            <span className="text-slate-300 font-bold">FlashRates.WANG</span>
+            <span className="text-slate-300 font-bold flex items-center gap-2">
+              FlashRates.WANG
+              <span className="text-[9px] text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1 py-0.5 rounded font-medium">
+                BETA
+              </span>
+            </span>
           </div>
           <div className="text-slate-500 text-sm">
             © 2026 High-Freq Systems. All rights reserved.
