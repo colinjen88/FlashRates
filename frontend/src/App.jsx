@@ -18,6 +18,8 @@ import {
   Layers,
   AlertTriangle,
   Coins,
+  ArrowUp,
+  ArrowDown,
   Banknote, // Added icon for Fiat currency
 } from "lucide-react";
 
@@ -301,6 +303,21 @@ const AssetCard = ({
   );
 };
 
+// TradingView Widget Component (Iframe Method)
+const TradingViewWidget = () => {
+  return (
+    <div className="w-full h-[126px] bg-slate-900 ring-1 ring-slate-800 rounded-xl overflow-hidden shadow-2xl">
+      <iframe
+        src="/tradingview-widget.html"
+        className="w-full h-full border-none overflow-hidden bg-transparent"
+        title="TradingView Widget"
+        scrolling="no"
+        allow="encrypted-media"
+      />
+    </div>
+  );
+};
+
 const DashboardSection = () => {
   const [marketData, setMarketData] = useState({});
   const [prevMarketData, setPrevMarketData] = useState({});
@@ -314,6 +331,7 @@ const DashboardSection = () => {
     "PAXG-USD": 1,
     "GC-F": 3,
     "SI-F": 3,
+    "XAG-USDT": 1, // Binance Silver
   };
 
   useEffect(() => {
@@ -413,6 +431,31 @@ const DashboardSection = () => {
         </p>
       </div>
 
+      {/* 第一排：市場概覽 (TradingView + USD/FX) */}
+      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">市場概覽 (Overview)</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto mb-8">
+         {/* TradingView Widget */}
+         <div className="w-full">
+            <TradingViewWidget />
+         </div>
+         {/* 美元匯率 */}
+         <AssetCard
+          name="美元匯率"
+          symbol="USD-TWD"
+          price={marketData["USD-TWD"]?.price}
+          prevPrice={prevMarketData["USD-TWD"]}
+          timestamp={marketData["USD-TWD"]?.timestamp}
+          source={marketData["USD-TWD"]?.details?.[0]}
+          fastest={marketData["USD-TWD"]?.fastest}
+          fastestLatency={marketData["USD-TWD"]?.fastestLatency}
+          avgLatency={marketData["USD-TWD"]?.avgLatency}
+          sourcesCount={marketData["USD-TWD"]?.sources}
+          supportedCount={supportedCounts["USD-TWD"]}
+          sources={marketData["USD-TWD"]?.details}
+          isMarketOpen={marketData["USD-TWD"]?.is_market_open}
+        />
+      </div>
+
       {/* 黃金區 (Gold) */}
       <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">黃金 (Gold)</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-8">
@@ -463,8 +506,8 @@ const DashboardSection = () => {
         />
       </div>
 
-      {/* 白銀區 + 匯率 (Silver & FX) */}
-      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">白銀 / 匯率 (Silver & FX)</h3>
+      {/* 白銀區 (Silver) */}
+      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">白銀 (Silver)</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-16">
         <AssetCard
           name="白銀現貨"
@@ -497,19 +540,19 @@ const DashboardSection = () => {
           isMarketOpen={marketData["SI-F"]?.is_market_open}
         />
         <AssetCard
-          name="美元匯率"
-          symbol="USD-TWD"
-          price={marketData["USD-TWD"]?.price}
-          prevPrice={prevMarketData["USD-TWD"]}
-          timestamp={marketData["USD-TWD"]?.timestamp}
-          source={marketData["USD-TWD"]?.details?.[0]}
-          fastest={marketData["USD-TWD"]?.fastest}
-          fastestLatency={marketData["USD-TWD"]?.fastestLatency}
-          avgLatency={marketData["USD-TWD"]?.avgLatency}
-          sourcesCount={marketData["USD-TWD"]?.sources}
-          supportedCount={supportedCounts["USD-TWD"]}
-          sources={marketData["USD-TWD"]?.details}
-          isMarketOpen={marketData["USD-TWD"]?.is_market_open}
+          name="幣安白銀"
+          symbol="XAG-USDT"
+          price={marketData["XAG-USDT"]?.price}
+          prevPrice={prevMarketData["XAG-USDT"]}
+          timestamp={marketData["XAG-USDT"]?.timestamp}
+          source={marketData["XAG-USDT"]?.details?.[0]}
+          fastest={marketData["XAG-USDT"]?.fastest}
+          fastestLatency={marketData["XAG-USDT"]?.fastestLatency}
+          avgLatency={marketData["XAG-USDT"]?.avgLatency}
+          sourcesCount={marketData["XAG-USDT"]?.sources}
+          supportedCount={supportedCounts["XAG-USDT"]}
+          sources={marketData["XAG-USDT"]?.details}
+          isMarketOpen={true}
         />
       </div>
 
@@ -517,7 +560,7 @@ const DashboardSection = () => {
         <FeatureCard
           icon={Coins}
           title="多資產並行 (Parallel)"
-          desc="每個資產對 (XAU-USD, XAG-USD, USD-TWD) 各自獨立輪詢與聚合，避免單一資產慢源影響全局更新。"
+          desc="每個資產對 (XAU, XAG, FX) 各自獨立輪詢與聚合，避免單一資產慢源影響全局更新。"
         />
         <FeatureCard
           icon={Cpu}

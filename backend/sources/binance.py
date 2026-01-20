@@ -18,14 +18,20 @@ class BinanceSource(BaseSource):
         self.weight = 0.8  # 高權重
 
     async def fetch_price(self, symbol: str) -> Optional[float]:
-        # Binance 只處理 PAXG 獨立報價，不混入 XAU-USD
-        if symbol != "PAXG-USD":
+        # Binance 處理 PAXG (黃金代幣) 與 XAG (白銀)
+        target_symbol = None
+        if symbol == "PAXG-USD":
+            target_symbol = "PAXGUSDT"
+        elif symbol == "XAG-USDT":  # Binance Silver
+            target_symbol = "XAGUSDT"
+            
+        if not target_symbol:
             return None
             
         try:
             status, data = await get_json(
                 self.URL,
-                params={"symbol": "PAXGUSDT"},
+                params={"symbol": target_symbol},
                 timeout=aiohttp.ClientTimeout(total=5),
                 retries=2,
                 backoff=0.4,
