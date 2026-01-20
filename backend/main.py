@@ -80,7 +80,10 @@ async def startup_event():
     scheduler = Scheduler(sources, aggregator)
     
     # 在後台運行 scheduler
-    scheduler_task = asyncio.create_task(scheduler.run(symbols=["XAU-USD", "XAG-USD", "USD-TWD", "PAXG-USD", "GC-F", "SI-F", "XAG-USDT", "XAU-USDT"]))
+    scheduler_task = asyncio.create_task(scheduler.run(symbols=[
+        "XAU-USD", "XAG-USD", "USD-TWD", "PAXG-USD", "GC-F", "SI-F", "XAG-USDT", "XAU-USDT",
+        "DXY", "US10Y", "HG-F", "CL-F", "VIX", "GDX", "SIL"
+    ]))
     
     logger.info(f"Application started with {len(sources)} data sources")
 
@@ -203,7 +206,14 @@ async def websocket_endpoint(websocket: WebSocket):
         "market:stream:GC-F", 
         "market:stream:SI-F",
         "market:stream:XAG-USDT",
-        "market:stream:XAU-USDT"
+        "market:stream:XAU-USDT",
+        "market:stream:DXY",
+        "market:stream:US10Y",
+        "market:stream:HG-F",
+        "market:stream:CL-F",
+        "market:stream:VIX",
+        "market:stream:GDX",
+        "market:stream:SIL"
     )
     
     try:

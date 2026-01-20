@@ -316,7 +316,7 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 | **Gold-API**          | REST API   | 30s      | 40s    | 0.6  | XAU, XAG          |
 | **APMEX**             | Scrape     | 60s      | 50s    | 0.5  | XAU, XAG          |
 | **BullionVault**      | XML API    | 10s      | 2s     | 0.7  | XAU               |
-| **Yahoo Finance**     | REST API   | 60s      | 5s     | 0.5  | XAU, XAG, USD-TWD |
+| **Yahoo Finance**     | REST API   | 60s      | 5s     | 0.5  | XAU, XAG, FX, DXY, US10Y, Copper, Oil, VIX, GDX, SIL |
 | **Kitco**             | HTML 爬蟲  | 60s      | 10s    | 0.4  | XAU, XAG          |
 | **Investing.com**     | Playwright | 120s     | 15s    | 0.5  | XAU, XAG, USD-TWD |
 | **OANDA**             | REST API   | 5s       | 3s     | 0.8  | XAU, XAG, USD-TWD |
@@ -359,10 +359,10 @@ T=5.0s: Yahoo Finance 請求
 ### 儀表板 (Dashboard)
 
 1. **多資產即時看板**
-   - 三欄式 Grid 佈局：市場概覽、黃金、白銀
-   - 市場概覽包含：TradingView 走勢圖、美元匯率、PAXG 代幣
-   - 黃金區塊包含：黃金現貨、黃金期貨、幣安黃金合約
-   - 白銀區塊包含：白銀現貨、白銀期貨、幣安白銀合約
+   - 寬屏佈局 (1440px) 與四欄式 Grid 設計
+   - 市場概覽包含：美元匯率、PAXG 代幣
+   - 黃金區塊包含：TradingView 走勢圖、黃金現貨、幣安合約 (黃金)、黃金期貨
+   - 白銀區塊包含：TradingView 走勢圖、白銀現貨、幣安合約 (白銀)、白銀期貨
    - 價格變動時背景閃爍動畫 (綠漲/紅跌)
    - 顯示漲跌幅百分比
 
@@ -453,6 +453,8 @@ python -m pytest tests/test_system.py -v
 
 | 版本 | 日期       | 說明                  |
 | ---- | ---------- | --------------------- |
+| v2.8 | 2026-01-20 | 新增相關指標 (DXY, US10Y, 銅, 原油, VIX, GDX, SIL)；新增 Yahoo Finance 來源；新增「相關指標」區塊與連動關係表；Footer 版權與寬度調整 |
+| v2.7 | 2026-01-20 | 介面寬度擴增至 1440px；優化四欄式佈局；黃金/白銀區塊新增獨立 TradingView 走勢圖；調整卡片順序與標籤 |
 | v2.6 | 2026-01-20 | 新增幣安合約 (Futures) 支援 (XAU-USDT, XAG-USDT)；修正新浪財經解析；優化儀表板佈局 (Overview 整合 PAXG) |
 | v2.5 | 2026-01-20 | 擴展數據源至 15 個：新增 Gold-API, APMEX 來源；新浪財經補齊現貨報價 |
 | v2.4 | 2026-01-20 | 新增 TradingView 黃金/白銀走勢圖 (Iframe)；新增幣安白銀 (XAG-USDT)；即時性顏色指標 (綠/橘/紅/紫)；介面優化 |

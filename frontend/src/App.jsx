@@ -78,7 +78,7 @@ const Navbar = ({ activeTab, setActiveTab }) => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div
             className="flex items-center gap-2 cursor-pointer"
@@ -312,13 +312,15 @@ const AssetCard = ({
 };
 
 // TradingView Widget Component (Iframe Method)
-const TradingViewWidget = () => {
+// TradingView Widget Component (Iframe Method) - Now accepts type
+const TradingViewWidget = ({ type }) => {
+  const src = type === "silver" ? "/tv-silver.html" : "/tv-gold.html";
   return (
     <div className="w-full h-[260px] bg-slate-900 ring-1 ring-slate-800 rounded-xl overflow-hidden shadow-2xl">
       <iframe
-        src="/tradingview-widget.html"
+        src={src}
         className="w-full h-full border-none overflow-hidden bg-transparent"
-        title="TradingView Widget"
+        title={`TradingView Widget ${type}`}
         scrolling="no"
         allow="encrypted-media"
       />
@@ -341,6 +343,13 @@ const DashboardSection = () => {
     "SI-F": 3,
     "XAG-USDT": 1, // Binance Silver
     "XAU-USDT": 1, // Binance Gold
+    "DXY": 1,
+    "US10Y": 1,
+    "HG-F": 1,
+    "CL-F": 1,
+    "VIX": 1,
+    "GDX": 1,
+    "SIL": 1,
   };
 
   useEffect(() => {
@@ -416,7 +425,7 @@ const DashboardSection = () => {
   }, []);
 
   return (
-    <div className="pt-24 pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div className="pt-24 pb-8 px-4 sm:px-6 lg:px-8 max-w-[1440px] mx-auto">
       {/* Header 區域縮減高度 */}
       <div className="text-center max-w-4xl mx-auto mb-8">
         <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold mb-3 animate-fade-in-up">
@@ -441,12 +450,8 @@ const DashboardSection = () => {
       </div>
 
       {/* 第一排：市場概覽 (TradingView + USD/FX) */}
-      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">市場概覽 (Overview)</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-8">
-         {/* TradingView Widget */}
-         <div className="w-full">
-            <TradingViewWidget />
-         </div>
+      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-[1440px] mx-auto">市場概覽 (Overview)</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto mb-8">
          {/* 美元匯率 */}
          <AssetCard
           name="美元匯率"
@@ -462,6 +467,36 @@ const DashboardSection = () => {
           supportedCount={supportedCounts["USD-TWD"]}
           sources={marketData["USD-TWD"]?.details}
           isMarketOpen={marketData["USD-TWD"]?.is_market_open}
+        />
+        <AssetCard
+          name="美元指數"
+          symbol="DXY"
+          price={marketData["DXY"]?.price}
+          prevPrice={prevMarketData["DXY"]}
+          timestamp={marketData["DXY"]?.timestamp}
+          source={marketData["DXY"]?.details?.[0]}
+          fastest={marketData["DXY"]?.fastest}
+          fastestLatency={marketData["DXY"]?.fastestLatency}
+          avgLatency={marketData["DXY"]?.avgLatency}
+          sourcesCount={marketData["DXY"]?.sources}
+          supportedCount={supportedCounts["DXY"]}
+          sources={marketData["DXY"]?.details}
+          isMarketOpen={marketData["DXY"]?.is_market_open}
+        />
+        <AssetCard
+          name="美債殖利率 (10Y)"
+          symbol="US10Y"
+          price={marketData["US10Y"]?.price}
+          prevPrice={prevMarketData["US10Y"]}
+          timestamp={marketData["US10Y"]?.timestamp}
+          source={marketData["US10Y"]?.details?.[0]}
+          fastest={marketData["US10Y"]?.fastest}
+          fastestLatency={marketData["US10Y"]?.fastestLatency}
+          avgLatency={marketData["US10Y"]?.avgLatency}
+          sourcesCount={marketData["US10Y"]?.sources}
+          supportedCount={supportedCounts["US10Y"]}
+          sources={marketData["US10Y"]?.details}
+          isMarketOpen={marketData["US10Y"]?.is_market_open}
         />
         {/* PAXG Moved Here */}
         <AssetCard
@@ -482,8 +517,11 @@ const DashboardSection = () => {
       </div>
 
       {/* 黃金區 (Gold) */}
-      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">黃金 (Gold)</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-8">
+      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-[1440px] mx-auto">黃金 (Gold)</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto mb-8">
+        <div className="w-full">
+            <TradingViewWidget type="gold" />
+        </div>
         <AssetCard
           name="黃金現貨"
           symbol="XAU-USD"
@@ -500,6 +538,21 @@ const DashboardSection = () => {
           isMarketOpen={marketData["XAU-USD"]?.is_market_open}
         />
         <AssetCard
+          name="幣安合約 (黃金)"
+          symbol="XAU-USDT"
+          price={marketData["XAU-USDT"]?.price}
+          prevPrice={prevMarketData["XAU-USDT"]}
+          timestamp={marketData["XAU-USDT"]?.timestamp}
+          source={marketData["XAU-USDT"]?.details?.[0]}
+          fastest={marketData["XAU-USDT"]?.fastest}
+          fastestLatency={marketData["XAU-USDT"]?.fastestLatency}
+          avgLatency={marketData["XAU-USDT"]?.avgLatency}
+          sourcesCount={marketData["XAU-USDT"]?.sources}
+          supportedCount={supportedCounts["XAU-USDT"]}
+          sources={marketData["XAU-USDT"]?.details}
+          isMarketOpen={true}
+        />
+        <AssetCard
           name="黃金期貨"
           symbol="GC-F"
           price={marketData["GC-F"]?.price}
@@ -514,26 +567,14 @@ const DashboardSection = () => {
           sources={marketData["GC-F"]?.details}
           isMarketOpen={marketData["GC-F"]?.is_market_open}
         />
-        <AssetCard
-          name="幣安合約"
-          symbol="XAU-USDT"
-          price={marketData["XAU-USDT"]?.price}
-          prevPrice={prevMarketData["XAU-USDT"]}
-          timestamp={marketData["XAU-USDT"]?.timestamp}
-          source={marketData["XAU-USDT"]?.details?.[0]}
-          fastest={marketData["XAU-USDT"]?.fastest}
-          fastestLatency={marketData["XAU-USDT"]?.fastestLatency}
-          avgLatency={marketData["XAU-USDT"]?.avgLatency}
-          sourcesCount={marketData["XAU-USDT"]?.sources}
-          supportedCount={supportedCounts["XAU-USDT"]}
-          sources={marketData["XAU-USDT"]?.details}
-          isMarketOpen={true}
-        />
       </div>
 
       {/* 白銀區 (Silver) */}
-      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-7xl mx-auto">白銀 (Silver)</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-16">
+      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-[1440px] mx-auto">白銀 (Silver)</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto mb-16">
+        <div className="w-full">
+            <TradingViewWidget type="silver" />
+        </div>
         <AssetCard
           name="白銀現貨"
           symbol="XAG-USD"
@@ -550,6 +591,21 @@ const DashboardSection = () => {
           isMarketOpen={marketData["XAG-USD"]?.is_market_open}
         />
         <AssetCard
+          name="幣安合約 (白銀)"
+          symbol="XAG-USDT"
+          price={marketData["XAG-USDT"]?.price}
+          prevPrice={prevMarketData["XAG-USDT"]}
+          timestamp={marketData["XAG-USDT"]?.timestamp}
+          source={marketData["XAG-USDT"]?.details?.[0]}
+          fastest={marketData["XAG-USDT"]?.fastest}
+          fastestLatency={marketData["XAG-USDT"]?.fastestLatency}
+          avgLatency={marketData["XAG-USDT"]?.avgLatency}
+          sourcesCount={marketData["XAG-USDT"]?.sources}
+          supportedCount={supportedCounts["XAG-USDT"]}
+          sources={marketData["XAG-USDT"]?.details}
+          isMarketOpen={true}
+        />
+        <AssetCard
           name="白銀期貨"
           symbol="SI-F"
           price={marketData["SI-F"]?.price}
@@ -564,25 +620,9 @@ const DashboardSection = () => {
           sources={marketData["SI-F"]?.details}
           isMarketOpen={marketData["SI-F"]?.is_market_open}
         />
-        <AssetCard
-          name="幣安合約"
-          symbol="XAG-USDT"
-          price={marketData["XAG-USDT"]?.price}
-          prevPrice={prevMarketData["XAG-USDT"]}
-          timestamp={marketData["XAG-USDT"]?.timestamp}
-          source={marketData["XAG-USDT"]?.details?.[0]}
-          fastest={marketData["XAG-USDT"]?.fastest}
-          fastestLatency={marketData["XAG-USDT"]?.fastestLatency}
-          avgLatency={marketData["XAG-USDT"]?.avgLatency}
-          sourcesCount={marketData["XAG-USDT"]?.sources}
-          supportedCount={supportedCounts["XAG-USDT"]}
-          sources={marketData["XAG-USDT"]?.details}
-          isMarketOpen={true}
-        />
-
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1440px] mx-auto">
         <FeatureCard
           icon={Coins}
           title="多資產並行 (Parallel)"
@@ -1424,7 +1464,7 @@ export default function App() {
       </main>
 
       <footer className="bg-slate-900 border-t border-slate-800 py-12 mt-12 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center">
               <Zap className="text-emerald-500 w-4 h-4" />
@@ -1432,7 +1472,7 @@ export default function App() {
             <span className="text-slate-300 font-bold">FlashRates.WANG</span>
           </div>
           <div className="text-slate-500 text-sm">
-            © 2026 High-Freq Data abcabc_wang_1688 Systems. All rights reserved.
+            © 2026 High-Freq Systems. All rights reserved.
           </div>
           <div className="flex gap-6 text-slate-400">
             <a href="https://github.com/colinjen88/FlashRates" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">
