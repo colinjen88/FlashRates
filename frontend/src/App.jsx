@@ -165,6 +165,26 @@ const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
   );
 };
 
+// --- 價差指標組件 ---
+const SpreadIndicator = ({ spotPrice, futurePrice }) => {
+  if (!spotPrice || !futurePrice) return null;
+  
+  const diff = spotPrice - futurePrice;
+  const pct = (diff / spotPrice) * 100;
+  
+  return (
+    <span className="text-xs font-mono text-slate-400 bg-slate-800/50 px-2 py-1 rounded border border-slate-700 flex items-center gap-2">
+      現貨與幣安合約價差：
+      <span className={diff > 0 ? "text-emerald-400" : "text-rose-400"}>
+        {pct.toFixed(2)}%
+      </span>
+      <span className="text-slate-500">
+        ({diff.toFixed(2)})
+      </span>
+    </span>
+  );
+};
+
 // --- 登入彈窗組件 ---
 const LoginModal = ({ isOpen, onClose, onLogin }) => {
   const [username, setUsername] = useState("");
@@ -698,7 +718,13 @@ const DashboardSection = () => {
       </div>
 
       {/* 黃金區 (Gold) */}
-      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-[1440px] mx-auto">黃金 (Gold)</h3>
+      <div className="flex items-center justify-between mb-4 max-w-[1440px] mx-auto">
+        <h3 className="text-lg font-semibold text-slate-300">黃金 (Gold)</h3>
+        <SpreadIndicator 
+          spotPrice={marketData["XAU-USD"]?.price} 
+          futurePrice={marketData["XAU-USDT"]?.price} 
+        />
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto mb-8">
         <div className="w-full">
             <TradingViewWidget type="gold" />
@@ -751,7 +777,13 @@ const DashboardSection = () => {
       </div>
 
       {/* 白銀區 (Silver) */}
-      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-[1440px] mx-auto">白銀 (Silver)</h3>
+      <div className="flex items-center justify-between mb-4 max-w-[1440px] mx-auto">
+        <h3 className="text-lg font-semibold text-slate-300">白銀 (Silver)</h3>
+        <SpreadIndicator 
+          spotPrice={marketData["XAG-USD"]?.price} 
+          futurePrice={marketData["XAG-USDT"]?.price} 
+        />
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto mb-16">
         <div className="w-full">
             <TradingViewWidget type="silver" />

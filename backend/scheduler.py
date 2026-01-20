@@ -5,6 +5,9 @@ from backend.sources.base import BaseSource
 from backend.aggregator import Aggregator
 from backend.metrics import record_source_failure, record_source_success
 from backend.market_hours import is_market_open
+from backend.redis_client import redis_client
+import os
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +118,55 @@ class Scheduler:
             
             await asyncio.sleep(1)  # 每秒聚合一次
 
+    async def _log_spread_loop(self):
+        """每分鐘記錄現貨與合約價差"""
+        # Ensure logs directory exists
+        os.makedirs("logs", exist_ok=True)
+        
+        # Setup specific logger
+        spread_logger = logging.getLogger("spread_logger")
+        spread_logger.setLevel(logging.INFO)
+        if not spread_logger.handlers:
+            handler = logging.FileHandler("logs/spreads.log")
+            formatter = logging.Formatter('%(asctime)s - %(message)s')
+            handler.setFormatter(formatter)
+            spread_logger.addHandler(handler)
+
+        while self.running:
+            try:
+                # Pairs to check: (Spot, Future, Name)
+                pairs = [
+                    ("XAU-USD", "XAU-USDT", "Gold"),
+                    ("XAG-USD", "XAG-USDT", "Silver")
+                ]
+                
+                log_entries = []
+                
+                for spot_sym, fut_sym, name in pairs:
+                    spot_raw = await redis_client.get(f"market:latest:{spot_sym}")
+                    fut_raw = await redis_client.get(f"market:latest:{fut_sym}")
+                    
+                    if spot_raw and fut_raw:
+                        spot_data = json.loads(spot_raw)
+                        fut_data = json.loads(fut_raw)
+                        
+                        spot_price = spot_data.get("price")
+                        fut_price = fut_data.get("price")
+                        
+                        if spot_price and fut_price:
+                            diff = spot_price - fut_price
+                            pct = (diff / spot_price) * 100
+                            
+                            log_entries.append(f"{name}: Spot={spot_price} Fut={fut_price} Diff={diff:.2f} ({pct:.2f}%)")
+                
+                if log_entries:
+                    spread_logger.info(" | ".join(log_entries))
+                    
+            except Exception as e:
+                logger.error(f"Error logging spreads: {e}")
+            
+            await asyncio.sleep(60)
+
     async def run(self, symbols: List[str]):
         self.running = True
         logger.info("Scheduler started.")
@@ -128,6 +180,9 @@ class Scheduler:
         
         # 創建聚合任務
         tasks.append(asyncio.create_task(self._aggregate_loop(symbols)))
+        
+        # 創建價差記錄任務
+        tasks.append(asyncio.create_task(self._log_spread_loop()))
         
         # 等待所有任務
         self._tasks = tasks
