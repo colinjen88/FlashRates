@@ -169,6 +169,14 @@ const AssetCard = ({
   const baseMs = timestamp ? timestamp * 1000 : null;
   const lastUpdateMs = baseMs ? Math.max(0, Math.floor(now - baseMs)) : null;
 
+  // Latency Color Logic
+  let latencyColor = "text-emerald-400"; // Default < 5s (Fresh)
+  if (lastUpdateMs !== null) {
+    if (lastUpdateMs > 30000) latencyColor = "text-purple-500 animate-pulse font-black";
+    else if (lastUpdateMs > 10000) latencyColor = "text-rose-500 animate-pulse font-bold";
+    else if (lastUpdateMs > 5000) latencyColor = "text-orange-400 font-bold";
+  }
+
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
@@ -214,7 +222,7 @@ const AssetCard = ({
             </div>
             <div className="text-[10px] text-slate-500">
               上次更新：
-              <span className="inline-block text-yellow-400 tabular-nums w-[5ch] text-right">
+              <span className={`inline-block ${latencyColor} tabular-nums w-[6ch] text-right`}>
                 {isMarketOpen === false ? "-" : (lastUpdateMs !== null ? lastUpdateMs : "--")}
               </span>
               毫秒前
@@ -306,7 +314,7 @@ const AssetCard = ({
 // TradingView Widget Component (Iframe Method)
 const TradingViewWidget = () => {
   return (
-    <div className="w-full h-[126px] bg-slate-900 ring-1 ring-slate-800 rounded-xl overflow-hidden shadow-2xl">
+    <div className="w-full h-[260px] bg-slate-900 ring-1 ring-slate-800 rounded-xl overflow-hidden shadow-2xl">
       <iframe
         src="/tradingview-widget.html"
         className="w-full h-full border-none overflow-hidden bg-transparent"
