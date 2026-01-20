@@ -1,10 +1,10 @@
-# FlashRates - 高頻匯率數據聚合系統 v2.0
+# FlashRates - 高頻匯率數據聚合系統 v2.3
 
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)]()
 [![React](https://img.shields.io/badge/react-18+-61DAFB.svg)]()
 
-**即時監控黃金 (XAU)、白銀 (XAG) 與美元匯率 (USD/TWD) 的高頻數據聚合平台。**
+**即時監控黃金 (XAU, GC-F, PAXG)、白銀 (XAG, SI-F) 與美元匯率 (USD/TWD) 的高頻數據聚合平台。**
 
 採用「分散式採集、中心化聚合」模式，從 10 個異構數據源同步抓取報價，實現亞秒級更新。
 
@@ -105,13 +105,11 @@ npm run dev
 
 ### 訪問地址
 
-| 服務       | URL                                  | 說明         |
-| ---------- | ------------------------------------ | ------------ |
-| 前端儀表板 | http://localhost:7000                | 即時監控介面 |
-| 後端 API   | http://localhost:8000                | REST API     |
-| WebSocket  | ws://localhost:8000/ws/stream        | 實時數據推送 |
-| Metrics    | http://localhost:8000/api/v1/metrics | 服務監控指標 |
-| API 文檔   | http://localhost:8000/docs           | Swagger UI   |
+| 前端儀表板 | https://liro.world                 | 生產環境介面 |
+| 後端 API   | https://liro.world/api/v1/latest     | REST API     |
+| WebSocket  | wss://liro.world/ws/stream           | 實時數據推送 |
+| Metrics    | https://liro.world/api/v1/metrics    | 服務監控指標 |
+| API 文檔   | https://liro.world/docs              | Swagger UI   |
 
 ---
 
@@ -448,6 +446,7 @@ python -m pytest tests/test_system.py -v
 
 | 版本 | 日期       | 說明                  |
 | ---- | ---------- | --------------------- |
+| v2.3 | 2026-01-20 | 新增期貨(GC-F, SI-F)、PAXG 報價；Docker 部署至 liro.world |
 | v2.0 | 2026-01-17 | 完整實作 8 源聚合系統 |
 | v1.0 | -          | 原始規格設計          |
 

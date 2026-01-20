@@ -18,6 +18,8 @@ class InvestingSource(BaseSource):
         "XAU-USD": "https://www.investing.com/currencies/xau-usd",
         "XAG-USD": "https://www.investing.com/currencies/xag-usd",
         "USD-TWD": "https://www.investing.com/currencies/usd-twd",
+        "GC-F": "https://www.investing.com/commodities/gold",
+        "SI-F": "https://www.investing.com/commodities/silver",
     }
     
     USER_AGENTS = [

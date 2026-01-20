@@ -18,7 +18,7 @@ def is_market_open(symbol: str = "XAU-USD") -> bool:
     「停盤時間 (場外交易)」顯示邏輯，我們統一依據傳統市場時間判斷。
     """
     # 簡單過濾 Crypto (如果之後有)
-    if "BTC" in symbol or "ETH" in symbol:
+    if "BTC" in symbol or "ETH" in symbol or "PAXG" in symbol:
         return True
 
     now_et = datetime.now(MARKET_TIMEZONE)

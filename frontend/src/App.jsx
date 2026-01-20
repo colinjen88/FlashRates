@@ -311,6 +311,9 @@ const DashboardSection = () => {
     "XAU-USD": 8,
     "XAG-USD": 7,
     "USD-TWD": 12, // 增加到 12 個來源
+    "PAXG-USD": 1,
+    "GC-F": 3,
+    "SI-F": 3,
   };
 
   useEffect(() => {
@@ -321,7 +324,15 @@ const DashboardSection = () => {
       // 確保後端 (backend/main.py) 已啟動 (uvicorn backend.main:app --reload)
       // 目前後端預設設定 (config.py) 允許任意 API Key，除非在 .env 設定了鎖定。
       const apiKey = "dev_key";
-      ws = new WebSocket(`ws://localhost:8000/ws/stream?api_key=${apiKey}`);
+      // 自動判斷 WebSocket 網址
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const host = window.location.host; // liro.world
+      // 如果是在 localhost 開發，可能還是連到 8000；如果在生產環境，則是 host 本身 (透過 Nginx /ws)
+      const wsUrl = window.location.hostname === "localhost" 
+        ? `ws://localhost:8000/ws/stream?api_key=${apiKey}`
+        : `${protocol}//${host}/ws/stream?api_key=${apiKey}`;
+
+      ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
         console.log("Connected to WebSocket");
@@ -431,7 +442,7 @@ const DashboardSection = () => {
           fastestLatency={marketData["GC-F"]?.fastestLatency}
           avgLatency={marketData["GC-F"]?.avgLatency}
           sourcesCount={marketData["GC-F"]?.sources}
-          supportedCount={2}
+          supportedCount={supportedCounts["GC-F"]}
           sources={marketData["GC-F"]?.details}
           isMarketOpen={marketData["GC-F"]?.is_market_open}
         />
@@ -446,7 +457,7 @@ const DashboardSection = () => {
           fastestLatency={marketData["PAXG-USD"]?.fastestLatency}
           avgLatency={marketData["PAXG-USD"]?.avgLatency}
           sourcesCount={marketData["PAXG-USD"]?.sources}
-          supportedCount={1}
+          supportedCount={supportedCounts["PAXG-USD"]}
           sources={marketData["PAXG-USD"]?.details}
           isMarketOpen={true}
         />
@@ -481,7 +492,7 @@ const DashboardSection = () => {
           fastestLatency={marketData["SI-F"]?.fastestLatency}
           avgLatency={marketData["SI-F"]?.avgLatency}
           sourcesCount={marketData["SI-F"]?.sources}
-          supportedCount={2}
+          supportedCount={supportedCounts["SI-F"]}
           sources={marketData["SI-F"]?.details}
           isMarketOpen={marketData["SI-F"]?.is_market_open}
         />
