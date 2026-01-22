@@ -6,11 +6,31 @@ from typing import List, Dict, Optional
 from backend.sources.base import BaseSource
 from backend.circuit_breaker import CircuitBreaker
 from backend.redis_client import redis_client
+from backend.config import get_settings
 from backend.metrics import record_aggregate
 from backend.market_hours import is_market_open
 import logging
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
+
+PRICE_PRECISION = {
+    "USD-TWD": 4,
+    "US10Y": 3,
+    "DXY": 3,
+    "XAU-USD": 2,
+    "XAG-USD": 2,
+    "PAXG-USD": 2,
+    "GC-F": 2,
+    "SI-F": 2,
+    "XAG-USDT": 2,
+    "XAU-USDT": 2,
+    "HG-F": 2,
+    "CL-F": 2,
+    "VIX": 2,
+    "GDX": 2,
+    "SIL": 2,
+}
 
 class Aggregator:
     def __init__(self, sources: List[BaseSource]):
@@ -156,9 +176,11 @@ class Aggregator:
         source_timestamps = [e.get('timestamp') for e in entries_for_output if e.get('timestamp')]
         latest_source_ts = max(source_timestamps) if source_timestamps else None
 
+        precision = PRICE_PRECISION.get(symbol, 2)
+
         output = {
             "symbol": symbol,
-            "price": round(final_price, 2),
+            "price": round(final_price, precision),
             "timestamp": latest_source_ts or time.time(),
             "sources": len(fresh_entries),
             "details": sources_used,
@@ -172,6 +194,21 @@ class Aggregator:
         output_json = json.dumps(output)
         await redis_client.publish(f"market:stream:{symbol}", output_json)
         await redis_client.set(f"market:latest:{symbol}", output_json)
+
+        # 儲存歷史資料 (Redis sorted set)
+        history_key = f"market:history:{symbol}"
+        await redis_client.zadd(history_key, {output_json: output["timestamp"]})
+
+        # 依時間與筆數保留歷史
+        retention_hours = max(1, int(settings.HISTORY_RETENTION_HOURS))
+        cutoff_ts = time.time() - (retention_hours * 3600)
+        await redis_client.zremrangebyscore(history_key, 0, cutoff_ts)
+
+        # 保留最近 N 筆
+        max_points = max(1000, int(settings.HISTORY_MAX_POINTS))
+        total_points = await redis_client.zcard(history_key)
+        if total_points and total_points > max_points:
+            await redis_client.zremrangebyrank(history_key, 0, total_points - max_points - 1)
 
         await record_aggregate(symbol, len(fresh_entries), weighted_latency)
         

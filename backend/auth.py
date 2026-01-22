@@ -9,6 +9,8 @@ from backend.redis_client import redis_client
 settings = get_settings()
 
 _rate_state = {}
+_rate_state_last_cleanup = 0.0
+_rate_state_cleanup_interval = 300.0
 
 
 def _parse_allowed_keys() -> Set[str]:
@@ -70,9 +72,17 @@ def _check_rate_limit(client_id: str, api_key: Optional[str], scope: str) -> boo
     burst = max(0, int(settings.RATE_LIMIT_BURST))
     max_allowed = limit + burst
 
+    global _rate_state_last_cleanup
     now = time.time()
     window = 60
     key = _rate_limit_key(client_id, api_key, scope)
+
+    if now - _rate_state_last_cleanup > _rate_state_cleanup_interval:
+        cutoff = now - (window * 2)
+        for k in list(_rate_state.keys()):
+            if _rate_state[k].get("start", 0) < cutoff:
+                _rate_state.pop(k, None)
+        _rate_state_last_cleanup = now
 
     state = _rate_state.get(key)
     if not state:

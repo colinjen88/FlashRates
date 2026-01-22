@@ -15,7 +15,9 @@ class KitcoSource(BaseSource):
     URL = "https://www.kitco.com/gold-price-today-usa/"
     
     def __init__(self):
-        super().__init__("Kitco", priority=4)
+        super().__init__("Kitco", priority=4, supported_symbols={
+            "XAU-USD", "XAG-USD",
+        })
         self.weight = 0.4
 
     async def fetch_price(self, symbol: str) -> Optional[float]:

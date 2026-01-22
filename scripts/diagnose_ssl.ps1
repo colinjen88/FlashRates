@@ -9,11 +9,11 @@ echo '=== 1. Current Nginx Sites Enabled ==='
 ls -la /etc/nginx/sites-enabled/
 
 echo ''
-echo '=== 2. Nginx Config for flashrates ==='
-cat /etc/nginx/sites-available/flashrates
+echo '=== 2. Nginx Config for goldlab ==='
+cat /etc/nginx/sites-available/goldlab
 
 echo ''
-echo '=== 3. SSL Certificates for liro.world ==='
+echo '=== 3. SSL Certificates for goldlab.cloud ==='
 ls -la /etc/letsencrypt/live/ 2>/dev/null || echo 'No certificates directory found'
 
 echo ''

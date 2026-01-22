@@ -29,7 +29,7 @@ class InvestingSource(BaseSource):
     ]
     
     def __init__(self):
-        super().__init__("Investing.com", priority=3)
+        super().__init__("Investing.com", priority=3, supported_symbols=set(self.URLS.keys()))
         self.weight = 0.5
         self.browser = None
         self.context = None

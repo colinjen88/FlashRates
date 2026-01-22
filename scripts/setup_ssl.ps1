@@ -1,4 +1,4 @@
-# SSL Setup Script for FlashRates
+# SSL Setup Script for Goldlab.cloud
 
 $VPS_IP = "72.62.66.151"
 $USER = "root"
@@ -14,15 +14,15 @@ apt-get update
 apt-get install -y certbot python3-certbot-nginx dos2unix
 
 # Ensure Nginx config is clean first (fix line endings just in case)
-dos2unix /etc/nginx/sites-available/flashrates
+dos2unix /etc/nginx/sites-available/goldlab
 dos2unix /etc/nginx/nginx.conf
 
-# Reload Nginx to make sure it picks up the flashrates site
+# Reload Nginx to make sure it picks up the goldlab site
 systemctl reload nginx
 
 # Obtain SSL Certificate (Non-interactive mode)
 # Using --nginx plugin which automatically edits the Nginx config
-certbot --nginx -d liro.world -d www.liro.world --non-interactive --agree-tos -m admin@liro.world --redirect
+certbot --nginx -d goldlab.cloud -d www.goldlab.cloud --non-interactive --agree-tos -m admin@goldlab.cloud --redirect
 
 # Reload Nginx again to apply SSL settings
 systemctl reload nginx
@@ -32,4 +32,4 @@ echo "✅ SSL Setup Complete!"
 
 ssh $SSH_DEST $SCRIPT
 
-Write-Host "🎉 HTTPS Enabled! Visit https://liro.world" -ForegroundColor Green
+Write-Host "🎉 HTTPS Enabled! Visit https://goldlab.cloud" -ForegroundColor Green

@@ -14,7 +14,9 @@ class GoldApiSource(BaseSource):
     BASE_URL = "https://api.gold-api.com/price"
     
     def __init__(self):
-        super().__init__("Gold-API", priority=2)
+        super().__init__("Gold-API", priority=2, supported_symbols={
+            "XAU-USD", "XAG-USD",
+        })
         self.weight = 0.6
 
     async def fetch_price(self, symbol: str) -> Optional[float]:

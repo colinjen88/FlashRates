@@ -1,4 +1,4 @@
-$VPS_HOST = "liro.world"
+$VPS_HOST = "goldlab.cloud"
 $VPS_USER = "root"
 $PROJECT_DIR = "/home/docker-server/projects/flashrates"
 

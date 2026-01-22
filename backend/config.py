@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 class Settings(BaseSettings):
-    APP_NAME: str = "FlashRates Aggregator"
+    APP_NAME: str = "Goldlab.cloud Aggregator"
     DEBUG: bool = False
     
     # Redis
@@ -32,6 +32,10 @@ class Settings(BaseSettings):
 
     # Proxy
     PROXY_LIST: str = "" # Comma separated list of proxies
+
+    # History retention
+    HISTORY_RETENTION_HOURS: int = 24
+    HISTORY_MAX_POINTS: int = 10000
 
     class Config:
         env_file = ".env"

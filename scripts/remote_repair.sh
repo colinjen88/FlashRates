@@ -11,8 +11,8 @@ if [ -f "backend/main.py" ]; then
 fi
 
 # Fix potential Nginx config line endings first (in case it was uploaded with CRLF)
-if [ -f "/etc/nginx/sites-available/flashrates" ]; then
-    dos2unix /etc/nginx/sites-available/flashrates
+if [ -f "/etc/nginx/sites-available/goldlab" ]; then
+    dos2unix /etc/nginx/sites-available/goldlab
 fi
 
 # Install/Update PM2 global if needed
@@ -37,7 +37,7 @@ pm2 save
 
 echo '--- Step 2: Fix Nginx & SSL ---'
 # Link config
-ln -sf /etc/nginx/sites-available/flashrates /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/goldlab /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 
 # Check config syntax
@@ -57,7 +57,7 @@ if ! command -v certbot &> /dev/null; then
 fi
 
 # Using --reinstall to force a clean slate if needed
-certbot --nginx -d liro.world -d www.liro.world --non-interactive --agree-tos -m admin@liro.world --redirect
+certbot --nginx -d goldlab.cloud -d www.goldlab.cloud --non-interactive --agree-tos -m admin@goldlab.cloud --redirect
 
 echo '--- Step 3: Final Restart ---'
 systemctl restart nginx

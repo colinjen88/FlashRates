@@ -1,4 +1,5 @@
 from fastapi import FastAPI, WebSocket, Depends, HTTPException
+from typing import Optional
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from backend.config import get_settings
@@ -121,6 +122,40 @@ async def get_latest(symbols: str = "xau-usd,xag-usd,usd-twd,paxg-usd,gc-f,si-f,
     return {"timestamp": __import__('time').time(), "data": result}
 
 
+@app.get("/api/v1/history")
+async def get_history(
+    symbols: str = "xau-usd,xag-usd,usd-twd",
+    start: Optional[float] = None,
+    end: Optional[float] = None,
+    limit: int = 300,
+    api_key: str = Depends(verify_api_key),
+):
+    """獲取歷史資料（Redis sorted set）"""
+    import json
+    limit = max(1, min(5000, int(limit)))
+    now_ts = __import__('time').time()
+    result = {}
+
+    for symbol in symbols.upper().split(","):
+        symbol = symbol.strip()
+        history_key = f"market:history:{symbol}"
+
+        if start is not None or end is not None:
+            min_score = start if start is not None else 0
+            max_score = end if end is not None else now_ts
+            rows = await redis_client.zrangebyscore(history_key, min_score, max_score)
+            if rows:
+                rows = rows[-limit:]
+        else:
+            rows = await redis_client.zrevrange(history_key, 0, limit - 1)
+            if rows:
+                rows = list(reversed(rows))
+
+        result[symbol] = [json.loads(r) for r in rows] if rows else []
+
+    return {"timestamp": now_ts, "data": result}
+
+
 @app.get("/api/v1/metrics")
 async def get_metrics(api_key: str = Depends(verify_api_key)):
     return await get_metrics_snapshot()
@@ -218,10 +253,11 @@ async def websocket_endpoint(websocket: WebSocket):
     
     try:
         while True:
-            message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+            message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=2.0)
             if message:
                 await websocket.send_text(message['data'])
-            await asyncio.sleep(0.01)
+            else:
+                await asyncio.sleep(0.05)
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:

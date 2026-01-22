@@ -14,7 +14,7 @@ class FloatRatesSource(BaseSource):
     URL = "http://www.floatrates.com/daily/usd.json"
     
     def __init__(self):
-        super().__init__("FloatRates", priority=5)
+        super().__init__("FloatRates", priority=5, supported_symbols={"USD-TWD"})
         self.weight = 0.4  # 權重較低，因為是 HTTP 且主要為每日更新
 
     async def fetch_price(self, symbol: str) -> Optional[float]:

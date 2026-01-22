@@ -28,7 +28,7 @@ class YahooFinanceSource(BaseSource):
     }
     
     def __init__(self):
-        super().__init__("Yahoo Finance", priority=2)
+        super().__init__("Yahoo Finance", priority=2, supported_symbols=set(self.SYMBOL_MAP.keys()))
         self.weight = 0.5
 
     async def fetch_price(self, symbol: str) -> Optional[float]:

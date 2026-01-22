@@ -3,7 +3,7 @@ $USER = "root"
 $SSH_DEST = "${USER}@${VPS_IP}"
 
 Write-Host "1/3 🔧 Uploading Clean Nginx Config (Port 80)..." -ForegroundColor Cyan
-scp flashrates.nginx "${SSH_DEST}:/etc/nginx/sites-available/flashrates"
+scp goldlab.nginx "${SSH_DEST}:/etc/nginx/sites-available/goldlab"
 
 Write-Host "2/3 🔧 Uploading Repair Script v2..." -ForegroundColor Cyan
 scp remote_repair_v2.sh "${SSH_DEST}:/tmp/remote_repair_v2.sh"
@@ -15,4 +15,4 @@ $CMD = "apt-get update >/dev/null && apt-get install -y dos2unix >/dev/null && d
 
 ssh $SSH_DEST $CMD
 
-Write-Host "🎉 Process Complete! Try putting https://liro.world in your browser." -ForegroundColor Green
+Write-Host "🎉 Process Complete! Try putting https://goldlab.cloud in your browser." -ForegroundColor Green

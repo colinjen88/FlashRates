@@ -77,4 +77,39 @@ class RedisClient:
             await self.connect()
         return await self.redis.srem(key, member)
 
+    async def zadd(self, key, mapping):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.zadd(key, mapping)
+
+    async def zrange(self, key, start, end, withscores=False):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.zrange(key, start, end, withscores=withscores)
+
+    async def zrevrange(self, key, start, end, withscores=False):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.zrevrange(key, start, end, withscores=withscores)
+
+    async def zrangebyscore(self, key, min_score, max_score, withscores=False):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.zrangebyscore(key, min_score, max_score, withscores=withscores)
+
+    async def zremrangebyrank(self, key, start, end):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.zremrangebyrank(key, start, end)
+
+    async def zremrangebyscore(self, key, min_score, max_score):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.zremrangebyscore(key, min_score, max_score)
+
+    async def zcard(self, key):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.zcard(key)
+
 redis_client = RedisClient()

@@ -16,7 +16,7 @@ class TaiwanBankSource(BaseSource):
     URL = "https://rate.bot.com.tw/xrt/flcsv/0/day"
     
     def __init__(self):
-        super().__init__("Taiwan Bank", priority=2)
+        super().__init__("Taiwan Bank", priority=2, supported_symbols={"USD-TWD"})
         self.weight = 0.7  # 官方來源，權重較高
 
     async def fetch_price(self, symbol: str) -> Optional[float]:

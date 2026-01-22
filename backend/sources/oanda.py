@@ -32,7 +32,9 @@ class OandaSource(BaseSource):
     }
     
     def __init__(self, api_token: str = None, account_id: str = None):
-        super().__init__("OANDA", priority=1)
+        super().__init__("OANDA", priority=1, supported_symbols={
+            "XAU-USD", "XAG-USD", "USD-TWD",
+        })
         self.weight = 0.8  # 高權重 (專業外匯平台)
         self.api_token = api_token or settings.OANDA_API_KEY or ""
         self.account_id = account_id or settings.OANDA_ACCOUNT_ID or ""

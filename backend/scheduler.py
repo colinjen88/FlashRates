@@ -58,6 +58,8 @@ class Scheduler:
 
     async def _poll_source(self, source: BaseSource, symbol: str):
         """輪詢單一數據源"""
+        if not source.supports(symbol):
+            return
         config = SOURCE_CONFIG.get(source.source_name, {"interval": 10, "offset": 0})
         base_interval = config["interval"]
         max_age = config.get("max_age", base_interval * 3)

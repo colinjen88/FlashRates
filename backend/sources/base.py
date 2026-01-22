@@ -3,12 +3,18 @@ from typing import Optional, Dict
 import time
 
 class BaseSource(ABC):
-    def __init__(self, source_name: str, priority: int = 1):
+    def __init__(self, source_name: str, priority: int = 1, supported_symbols=None):
         self.source_name = source_name
         self.priority = priority
         self.is_active = True
         self.error_count = 0
         self.last_run = 0
+        self.supported_symbols = {s.upper() for s in supported_symbols} if supported_symbols else None
+
+    def supports(self, symbol: str) -> bool:
+        if self.supported_symbols is None:
+            return True
+        return symbol.upper() in self.supported_symbols
 
     @abstractmethod
     async def fetch_price(self, symbol: str) -> Optional[float]:
@@ -23,6 +29,9 @@ class BaseSource(ABC):
         Wrapper to fetch data and return standardized dictionary.
         """
         if not self.is_active:
+            return None
+
+        if not self.supports(symbol):
             return None
 
         start_time = time.time()

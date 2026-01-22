@@ -19,7 +19,9 @@ class ApmexSource(BaseSource):
     }
     
     def __init__(self):
-        super().__init__("APMEX", priority=3)
+        super().__init__("APMEX", priority=3, supported_symbols={
+            "XAU-USD", "XAG-USD",
+        })
         self.weight = 0.5
 
     async def fetch_price(self, symbol: str) -> Optional[float]:

@@ -17,7 +17,7 @@ class OpenErApiSource(BaseSource):
     URL = "https://open.er-api.com/v6/latest/USD"
 
     def __init__(self):
-        super().__init__("open.er-api.com", priority=3)
+        super().__init__("open.er-api.com", priority=3, supported_symbols={"USD-TWD"})
         self.weight = 0.5
 
     async def fetch_price(self, symbol: str) -> Optional[float]:

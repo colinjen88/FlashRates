@@ -12,7 +12,7 @@ def generate_key(length: int, prefix: str = "") -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate API keys for FlashRates")
+    parser = argparse.ArgumentParser(description="Generate API keys for Goldlab.cloud")
     parser.add_argument("--count", type=int, default=2, help="Number of keys to generate")
     parser.add_argument("--length", type=int, default=DEFAULT_LENGTH, help="Length of key body")
     parser.add_argument("--prefix", type=str, default="fr_", help="Key prefix")

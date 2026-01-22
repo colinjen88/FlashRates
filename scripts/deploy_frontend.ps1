@@ -1,4 +1,4 @@
-$VPS = "root@liro.world"
+$VPS = "root@goldlab.cloud"
 $DIR = "/home/docker-server/projects/flashrates"
 
 Write-Host "🚧 Building Frontend..."

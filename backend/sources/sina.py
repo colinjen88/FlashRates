@@ -16,7 +16,9 @@ class SinaFinanceSource(BaseSource):
     URL = "https://hq.sinajs.cn/list="
     
     def __init__(self):
-        super().__init__("Sina Finance", priority=2)
+        super().__init__("Sina Finance", priority=2, supported_symbols={
+            "USD-TWD", "XAU-USD", "XAG-USD", "GC-F", "SI-F",
+        })
         self.weight = 0.6
 
     async def fetch_price(self, symbol: str) -> Optional[float]:

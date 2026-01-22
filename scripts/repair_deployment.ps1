@@ -4,7 +4,7 @@ $SSH_DEST = "${USER}@${VPS_IP}"
 
 Write-Host "🔧 Uploading Check..." -ForegroundColor Cyan
 # Upload local config
-scp flashrates.nginx "${SSH_DEST}:/etc/nginx/sites-available/flashrates"
+scp goldlab.nginx "${SSH_DEST}:/etc/nginx/sites-available/goldlab"
 
 Write-Host "🔧 Uploading Repair Script..." -ForegroundColor Cyan
 scp remote_repair.sh "${SSH_DEST}:/tmp/remote_repair.sh"
@@ -17,4 +17,4 @@ $CMD = "apt-get update && apt-get install -y dos2unix && dos2unix /tmp/remote_re
 
 ssh $SSH_DEST $CMD
 
-Write-Host "🎉 Fix Deployed! Please wait 10 seconds and try refreshing https://liro.world" -ForegroundColor Green
+Write-Host "🎉 Fix Deployed! Please wait 10 seconds and try refreshing https://goldlab.cloud" -ForegroundColor Green

@@ -32,6 +32,11 @@ Write-Host "Uploading configs..."
 scp requirements.txt "${SSH_DEST}:${REMOTE_DIR}/"
 scp ecosystem.config.js "${SSH_DEST}:${REMOTE_DIR}/"
 
+# Upload Nginx site config (Goldlab)
+$NGINX_CONF_LOCAL = Join-Path $PSScriptRoot "..\goldlab.nginx"
+Write-Host "Uploading nginx site config (goldlab)..."
+scp "$NGINX_CONF_LOCAL" "${SSH_DEST}:/etc/nginx/sites-available/goldlab"
+
 Write-Host "🔧 Configuring Remote Server..." -ForegroundColor Cyan
 $SCRIPT = @"
 # Update System & Install Dependencies
@@ -57,10 +62,10 @@ pm2 start ecosystem.config.js --interpreter ./venv/bin/python3
 pm2 save
 
 # Fix Nginx Config formatting
-dos2unix /etc/nginx/sites-available/flashrates
+dos2unix /etc/nginx/sites-available/goldlab
 
 # Enable Site & Restart Nginx
-ln -sf /etc/nginx/sites-available/flashrates /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/goldlab /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl restart nginx
 
@@ -70,4 +75,4 @@ echo "✅ Deployment Complete!"
 # Execute remote setup script
 ssh $SSH_DEST $SCRIPT
 
-Write-Host "🎉 Done! Visit http://liro.world" -ForegroundColor Green
+Write-Host "🎉 Done! Visit https://goldlab.cloud" -ForegroundColor Green

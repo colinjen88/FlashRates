@@ -3,7 +3,7 @@
 此專案已於 **2026-01-19** 從傳統 Nginx 架構遷移至 Docker 容器化架構。
 
 ## 📍 專案資訊
-- **網域**: `liro.world` / `www.liro.world`
+- **網域**: `goldlab.cloud` / `www.goldlab.cloud`
 - **路徑**: `/home/docker-server/projects/flashrates`
 - **原始路徑備份**: `/var/www/flashrates` (舊檔案仍保留但未運作)
 
@@ -46,8 +46,8 @@ docker-compose logs -f backend
 
 ### 更新前端
 1. 將新的 `dist` 檔案上傳並覆蓋 `frontend_dist/` 目錄。
-2. **重要**：請確保新編譯的 JS 檔案中，WebSocket 連線指向 `wss://liro.world/ws/stream` 而非 localhost。
-   - 可用指令修正：`sed -i 's|localhost:8000|liro.world|g' frontend_dist/assets/*.js`
+2. **重要**：請確保新編譯的 JS 檔案中，WebSocket 連線指向 `wss://goldlab.cloud/ws/stream` 而非 localhost。
+   - 可用指令修正：`sed -i 's|localhost:8000|goldlab.cloud|g' frontend_dist/assets/*.js`
 
 ### 更新後端
 1. 修改 `backend/` 目錄下的 Python 程式碼。
@@ -58,5 +58,5 @@ docker-compose logs -f backend
 
 ## ⚠️ 遷移時的特殊修改
 為了讓舊程式碼在 Docker 環境正常運作，遷移過程中執行了以下自動化修改：
-1. **Hardcoded URL Fix**: 前端 JS 中的 `ws://localhost:8000` 已批量替換為 `wss://liro.world`。
+1. **Hardcoded URL Fix**: 前端 JS 中的 `ws://localhost:8000` 已批量替換為 `wss://goldlab.cloud`。
 2. **API Key Removal**: 移除了前端連線字串中無效的 `?api_key=YOUR_API_KEY` 參數，以修復 WebSocket 連線失敗問題。

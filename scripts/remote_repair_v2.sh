@@ -20,10 +20,10 @@ else
     echo "default site not found."
 fi
 
-# Ensure flashrates config is fresh
-# (Assuming flashrates.nginx was uploaded to /etc/nginx/sites-available/flashrates by the PS1 script)
+# Ensure goldlab config is fresh
+# (Assuming goldlab.nginx was uploaded to /etc/nginx/sites-available/goldlab by the PS1 script)
 # We make sure it is linked
-ln -sf /etc/nginx/sites-available/flashrates /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/goldlab /etc/nginx/sites-enabled/
 
 # Test Nginx Config
 echo "Testing Nginx config..."
@@ -37,17 +37,17 @@ systemctl reload nginx
 echo "--- Step 2: Setup SSL with Certbot ---"
 
 # Check if certs already exist
-if [ -d "/etc/letsencrypt/live/liro.world" ]; then
+if [ -d "/etc/letsencrypt/live/goldlab.cloud" ]; then
     echo "Existing certificates found. Checking validity..."
     certbot certificates
 else
-    echo "No certificates found for liro.world."
+    echo "No certificates found for goldlab.cloud."
 fi
 
 # Run Certbot to install/reinstall
 # We use --nginx plugin. --force-renewal can be used if we suspect broken certs, but let's stick to --reinstall
 echo "Requesting Certificate..."
-certbot --nginx -d liro.world -d www.liro.world --non-interactive --agree-tos -m admin@liro.world --redirect
+certbot --nginx -d goldlab.cloud -d www.goldlab.cloud --non-interactive --agree-tos -m admin@goldlab.cloud --redirect
 
 # 3. Final Verification
 echo "--- Step 3: Final Verification ---"

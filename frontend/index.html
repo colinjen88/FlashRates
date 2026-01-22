@@ -1,14 +1,81 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="robots" content="noindex, nofollow" />
-    <title>frontend</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <title>Goldlab.cloud｜即時黃金白銀與匯率看板</title>
+  <meta name="description"
+    content="Goldlab.cloud（FlashRates）即時監控黃金/白銀（XAU/XAG）與 USD/TWD 等匯率，整合多來源高頻報價，提供 WebSocket 實時推送與視覺化看板。" />
+  <meta name="application-name" content="Goldlab.cloud" />
+  <meta name="theme-color" content="#0b1220" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+
+  <link rel="canonical" href="https://goldlab.cloud/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Goldlab.cloud" />
+  <meta property="og:locale" content="zh_TW" />
+  <meta property="og:title" content="Goldlab.cloud｜即時黃金白銀與匯率看板" />
+  <meta property="og:description" content="即時監控黃金/白銀（XAU/XAG）與 USD/TWD 等匯率，整合多來源高頻報價，提供 WebSocket 實時推送與看板。" />
+  <meta property="og:url" content="https://goldlab.cloud/" />
+  <meta property="og:image" content="https://goldlab.cloud/flow_diagram.png" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Goldlab.cloud｜即時黃金白銀與匯率看板" />
+  <meta name="twitter:description" content="即時監控黃金/白銀（XAU/XAG）與 USD/TWD 等匯率，整合多來源高頻報價，提供 WebSocket 實時推送與看板。" />
+  <meta name="twitter:image" content="https://goldlab.cloud/flow_diagram.png" />
+
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://goldlab.cloud/#org",
+          "name": "Goldlab.cloud",
+          "url": "https://goldlab.cloud/",
+          "email": "colinjen88@gmail.com",
+          "sameAs": [
+            "https://t.me/colinjen88"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://goldlab.cloud/#website",
+          "url": "https://goldlab.cloud/",
+          "name": "Goldlab.cloud",
+          "alternateName": "FlashRates",
+          "publisher": { "@id": "https://goldlab.cloud/#org" }
+        },
+        {
+          "@type": "WebPage",
+          "@id": "https://goldlab.cloud/#webpage",
+          "url": "https://goldlab.cloud/",
+          "name": "Goldlab.cloud｜即時黃金白銀與匯率看板",
+          "description": "即時監控黃金/白銀（XAU/XAG）與 USD/TWD 等匯率，整合多來源高頻報價，提供 WebSocket 實時推送與視覺化看板。",
+          "isPartOf": { "@id": "https://goldlab.cloud/#website" }
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://goldlab.cloud/#app",
+          "name": "Goldlab.cloud Dashboard",
+          "url": "https://goldlab.cloud/",
+          "applicationCategory": "FinanceApplication",
+          "operatingSystem": "All",
+          "isPartOf": { "@id": "https://goldlab.cloud/#website" },
+          "publisher": { "@id": "https://goldlab.cloud/#org" }
+        }
+      ]
+    }
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

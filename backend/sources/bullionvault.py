@@ -11,7 +11,9 @@ class BullionVaultSource(BaseSource):
     URL = "https://live.bullionvault.com/secure/api/v2/view_market_xml.do"
     
     def __init__(self):
-        super().__init__("BullionVault", priority=1)
+        super().__init__("BullionVault", priority=1, supported_symbols={
+            "XAU-USD", "XAG-USD",
+        })
 
     async def fetch_price(self, symbol: str) -> Optional[float]:
         # Symbol mapping: XAU-USD -> securityClass="McAgAu" (Actually Au for Gold, Ag for Silver)

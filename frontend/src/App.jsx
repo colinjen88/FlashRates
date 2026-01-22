@@ -22,16 +22,9 @@ import {
   ArrowDown,
   Banknote,
   Lock,
-  Eye,
-  EyeOff,
-  User,
+  Mail,
+  Send,
 } from "lucide-react";
-
-// --- 管理端登入憑證 ---
-const ADMIN_CREDENTIALS = {
-  username: "jenjen",
-  password: "FlashRates.WANG1",
-};
 
 // --- 模擬數據與配置 ---
 
@@ -50,24 +43,24 @@ const MOCK_SOURCES = [
 ];
 
 const CODE_EXAMPLES = {
-  curl: `curl -X GET "http://localhost:8000/api/v1/latest?symbols=xau-usd,xag-usd,usd-twd" \\
+  curl: `curl -X GET "https://goldlab.cloud/api/v1/latest?symbols=xau-usd,xag-usd,usd-twd" \\
   -H "X-API-Key: YOUR_API_KEY"`,
   python: `import requests
 
 # 同時請求多種資產
-url = "http://localhost:8000/api/v1/latest"
+url = "https://goldlab.cloud/api/v1/latest"
 params = {
     "symbols": "xau-usd,xag-usd,usd-twd", # 黃金, 白銀, 台幣匯率
 }
 headers = {"X-API-Key": "YOUR_API_KEY"}
 response = requests.get(url, params=params, headers=headers)
 print(response.json())`,
-  js: `const response = await fetch('http://localhost:8000/api/v1/latest?symbols=xau-usd,xag-usd,usd-twd', {
+  js: `const response = await fetch('https://goldlab.cloud/api/v1/latest?symbols=xau-usd,xag-usd,usd-twd', {
   headers: { 'X-API-Key': 'YOUR_API_KEY' }
 });
 
 // WebSocket 訂閱多頻道
-const socket = new WebSocket('ws://localhost:8000/ws/stream?api_key=YOUR_API_KEY');
+const socket = new WebSocket('wss://goldlab.cloud/ws/stream?api_key=YOUR_API_KEY');
 socket.onmessage = (event) => {
   const data = JSON.parse(event.data);
   console.log(\`\${data.symbol}: \${data.price}\`);
@@ -76,7 +69,7 @@ socket.onmessage = (event) => {
 
 // --- 組件 ---
 
-const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
+const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick, onContactClick }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
@@ -95,6 +88,11 @@ const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
     setIsOpen(false);
   };
 
+  const handleContactClick = () => {
+    onContactClick();
+    setIsOpen(false);
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -107,7 +105,7 @@ const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
               <Zap className="text-slate-900 w-5 h-5 fill-current" />
             </div>
             <span className="text-white font-bold text-xl tracking-tight flex items-center gap-2">
-              FlashRates<span className="text-emerald-500">.WANG</span>
+              Goldlab<span className="text-emerald-500">.cloud</span>
               <span className="text-[10px] text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded font-medium">
                 BETA
               </span>
@@ -120,16 +118,21 @@ const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                    activeTab === item.id
-                      ? "text-emerald-400 bg-slate-800"
-                      : "text-slate-300 hover:text-white hover:bg-slate-800"
-                  }`}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${activeTab === item.id
+                    ? "text-emerald-400 bg-slate-800"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800"
+                    }`}
                 >
                   {item.protected && <Lock className="w-3 h-3" />}
                   {item.label}
                 </button>
               ))}
+              <button
+                onClick={handleContactClick}
+                className="px-3 py-2 rounded-md text-sm font-medium transition-colors text-slate-300 hover:text-white hover:bg-slate-800"
+              >
+                給我建議
+              </button>
             </div>
           </div>
 
@@ -148,7 +151,7 @@ const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
       {isOpen && (
         <div className="md:hidden bg-slate-900 border-b border-slate-800">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          {navItems.map((item) => (
+            {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item)}
@@ -158,6 +161,12 @@ const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
                 {item.label}
               </button>
             ))}
+            <button
+              onClick={handleContactClick}
+              className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-slate-800"
+            >
+              給我建議
+            </button>
           </div>
         </div>
       )}
@@ -168,10 +177,10 @@ const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
 // --- 價差指標組件 ---
 const SpreadIndicator = ({ spotPrice, futurePrice }) => {
   if (!spotPrice || !futurePrice) return null;
-  
+
   const diff = spotPrice - futurePrice;
   const pct = (diff / spotPrice) * 100;
-  
+
   return (
     <span className="text-xs font-mono text-slate-400 bg-slate-800/50 px-2 py-1 rounded border border-slate-700 flex items-center gap-2">
       現貨與幣安合約價差：
@@ -186,33 +195,31 @@ const SpreadIndicator = ({ spotPrice, futurePrice }) => {
 };
 
 // --- 登入彈窗組件 ---
-const LoginModal = ({ isOpen, onClose, onLogin }) => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+const LoginModal = ({ isOpen, onClose, onLogin, apiBase }) => {
+  const [adminKey, setAdminKey] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    // 驗證帳號密碼
-    setTimeout(() => {
-      if (
-        username === ADMIN_CREDENTIALS.username &&
-        password === ADMIN_CREDENTIALS.password
-      ) {
-        onLogin();
-        setUsername("");
-        setPassword("");
-        onClose();
-      } else {
-        setError("帳號或密碼錯誤");
+    try {
+      const res = await fetch(`${apiBase}/api/v1/admin/keys`, {
+        headers: { "X-API-Key": adminKey },
+      });
+      if (!res.ok) {
+        throw new Error("invalid");
       }
+      onLogin(adminKey);
+      setAdminKey("");
+      onClose();
+    } catch (e) {
+      setError("管理員 API Key 無效");
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   if (!isOpen) return null;
@@ -238,60 +245,29 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">管理端登入</h2>
             <p className="text-slate-400 text-sm">
-              請輸入管理員帳號和密碼
+              請輸入管理員 API Key
             </p>
           </div>
 
           {/* 表單 */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* 帳號輸入 */}
+            {/* API Key 輸入 */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                帳號
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="w-5 h-5 text-slate-500" />
-                </div>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
-                  placeholder="請輸入帳號"
-                  autoComplete="username"
-                />
-              </div>
-            </div>
-
-            {/* 密碼輸入 */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                密碼
+                管理員 API Key
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="w-5 h-5 text-slate-500" />
                 </div>
                 <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
-                  placeholder="請輸入密碼"
-                  autoComplete="current-password"
+                  type="password"
+                  value={adminKey}
+                  onChange={(e) => setAdminKey(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+                  placeholder="請輸入管理員 API Key"
+                  autoComplete="off"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
               </div>
             </div>
 
@@ -306,7 +282,7 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
             {/* 提交按鈕 */}
             <button
               type="submit"
-              disabled={isLoading || !username || !password}
+              disabled={isLoading || !adminKey}
               className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               {isLoading ? (
@@ -330,6 +306,94 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
           >
             <X className="w-6 h-6" />
           </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- 聯絡小卡組件 ---
+const ContactModal = ({ isOpen, onClose, telegramLink, email }) => {
+  const [copied, setCopied] = useState(false);
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (event) => {
+      if (cardRef.current && !cardRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen, onClose]);
+
+  const handleCopy = async () => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(email);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = email;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (e) {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      className={`fixed top-16 left-auto z-[100] w-72 max-w-[calc(100%-1rem)] bg-slate-900 border border-slate-700 rounded-xl shadow-xl overflow-hidden transform-gpu transition-all duration-200 right-[max(1rem,calc((100vw-1440px)/2+1.5rem))] ${isOpen
+        ? "opacity-100 translate-y-2"
+        : "opacity-0 -translate-y-2 pointer-events-none"
+        }`}
+    >
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500" />
+
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Mail className="w-4 h-4 text-emerald-400" />
+          <h3 className="text-sm font-semibold text-white">給我建議</h3>
+        </div>
+
+        <div className="space-y-3">
+          <div className="bg-slate-950 border border-slate-800 rounded-lg p-3">
+            <div className="text-[11px] text-slate-400 mb-1">Telegram</div>
+            {telegramLink ? (
+              <a
+                href={telegramLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 text-sm"
+              >
+                <Send className="w-4 h-4" />
+                @colinjen88
+              </a>
+            ) : (
+              <div className="text-xs text-slate-500">尚未設定 Telegram 連結</div>
+            )}
+          </div>
+
+          <div className="bg-slate-950 border border-slate-800 rounded-lg p-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] text-slate-400 mb-1">Email</div>
+              <div className="text-sm text-slate-200 font-mono">{email}</div>
+            </div>
+            <button
+              onClick={handleCopy}
+              aria-label={copied ? "已複製" : "複製 email"}
+              className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-md bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-xs"
+            >
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -387,13 +451,12 @@ const AssetCard = ({
             <span className="text-sm font-bold text-white flex items-center gap-2">
               {name}
               <span
-                className={`text-[10px] ${
-                  hasData
-                    ? isMarketOpen === false
-                      ? "text-orange-400 bg-orange-500/10 border-orange-500/20"
-                      : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                    : "text-slate-400 bg-slate-500/10 border-slate-500/20"
-                } px-1.5 py-0.5 rounded border font-mono`}
+                className={`text-[10px] ${hasData
+                  ? isMarketOpen === false
+                    ? "text-orange-400 bg-orange-500/10 border-orange-500/20"
+                    : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                  : "text-slate-400 bg-slate-500/10 border-slate-500/20"
+                  } px-1.5 py-0.5 rounded border font-mono`}
               >
                 {hasData
                   ? isMarketOpen === false
@@ -520,10 +583,172 @@ const TradingViewWidget = ({ type }) => {
   );
 };
 
+const HistoryChart = ({ symbol, history }) => {
+  if (!history || history.length < 2) {
+    return (
+      <div className="flex items-center justify-center h-[220px] text-slate-500 text-sm">
+        暫無歷史資料
+      </div>
+    );
+  }
+
+  const prices = history.map((p) => p.price).filter((p) => typeof p === "number");
+  if (prices.length < 2) {
+    return (
+      <div className="flex items-center justify-center h-[220px] text-slate-500 text-sm">
+        暫無歷史資料
+      </div>
+    );
+  }
+
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const span = Math.max(0.0001, max - min);
+
+  const points = prices.map((price, index) => {
+    const x = (index / (prices.length - 1)) * 100;
+    const y = 100 - ((price - min) / span) * 100;
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  });
+
+  const lastPrice = prices[prices.length - 1];
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-2 text-xs text-slate-400">
+        <span>{symbol}</span>
+        <span className="text-slate-300 font-mono">
+          {lastPrice.toFixed(2)}
+        </span>
+      </div>
+      <svg viewBox="0 0 100 100" className="w-full h-[220px]">
+        <defs>
+          <linearGradient id="historyGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <polyline
+          fill="none"
+          stroke="#10b981"
+          strokeWidth="1.6"
+          points={points.join(" ")}
+        />
+        <polygon
+          fill="url(#historyGradient)"
+          points={`0,100 ${points.join(" ")} 100,100`}
+        />
+      </svg>
+      <div className="mt-2 text-[10px] text-slate-500 flex justify-between">
+        <span>Low {min.toFixed(2)}</span>
+        <span>High {max.toFixed(2)}</span>
+      </div>
+    </div>
+  );
+};
+
+const MultiHistoryChart = ({ seriesMap, symbols, sharedScale }) => {
+  const colorPalette = [
+    "#10b981",
+    "#60a5fa",
+    "#f59e0b",
+    "#f43f5e",
+    "#a78bfa",
+    "#22c55e",
+  ];
+
+  const seriesList = symbols
+    .map((symbol) => {
+      const series = seriesMap?.[symbol] || [];
+      const values = series.map((p) => p.price).filter((p) => typeof p === "number");
+      if (values.length < 2) {
+        return null;
+      }
+      return { symbol, values };
+    })
+    .filter(Boolean);
+
+  const globalMin = sharedScale && seriesList.length
+    ? Math.min(...seriesList.flatMap((item) => item.values))
+    : null;
+  const globalMax = sharedScale && seriesList.length
+    ? Math.max(...seriesList.flatMap((item) => item.values))
+    : null;
+
+  const lines = seriesList
+    .map((symbol, index) => {
+      const values = seriesList[index].values;
+      const min = sharedScale ? globalMin : Math.min(...values);
+      const max = sharedScale ? globalMax : Math.max(...values);
+      const span = Math.max(0.0001, max - min);
+      const points = values.map((value, idx) => {
+        const x = (idx / (values.length - 1)) * 100;
+        const y = 100 - ((value - min) / span) * 100;
+        return `${x.toFixed(2)},${y.toFixed(2)}`;
+      });
+      return {
+        symbol: seriesList[index].symbol,
+        color: colorPalette[index % colorPalette.length],
+        points: points.join(" "),
+        latest: values[values.length - 1],
+      };
+    })
+    .filter(Boolean);
+
+  if (!lines.length) {
+    return (
+      <div className="flex items-center justify-center h-[220px] text-slate-500 text-sm">
+        暫無歷史資料
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <div className="flex flex-wrap gap-3 text-xs text-slate-300 mb-2">
+        {lines.map((line) => (
+          <div key={line.symbol} className="flex items-center gap-2">
+            <span
+              className="inline-block w-2.5 h-2.5 rounded-full"
+              style={{ backgroundColor: line.color }}
+            ></span>
+            <span className="font-mono">
+              {line.symbol} {line.latest.toFixed(2)}
+            </span>
+          </div>
+        ))}
+      </div>
+      <svg viewBox="0 0 100 100" className="w-full h-[220px]">
+        {lines.map((line) => (
+          <polyline
+            key={line.symbol}
+            fill="none"
+            stroke={line.color}
+            strokeWidth="1.6"
+            points={line.points}
+          />
+        ))}
+      </svg>
+      <div className="mt-2 text-[10px] text-slate-500">
+        {sharedScale ? "多條線共用同一尺度" : "多條線比較為各自區間的相對變化（獨立縮放）"}
+      </div>
+    </div>
+  );
+};
+
 const DashboardSection = () => {
   const [marketData, setMarketData] = useState({});
   const [prevMarketData, setPrevMarketData] = useState({});
   const [isConnected, setIsConnected] = useState(false);
+  const [historyData, setHistoryData] = useState({});
+  const [historySymbol, setHistorySymbol] = useState("XAU-USD");
+  const [historyRange, setHistoryRange] = useState("6h");
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareSymbols, setCompareSymbols] = useState(["XAU-USD", "XAG-USD"]);
+  const [sharedScale, setSharedScale] = useState(true);
+  const [useCustomRange, setUseCustomRange] = useState(false);
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
   const marketDataRef = useRef({});
 
   const supportedCounts = {
@@ -544,39 +769,51 @@ const DashboardSection = () => {
     "SIL": 1,
   };
 
+  const historySymbols = ["XAU-USD", "XAG-USD", "USD-TWD", "GC-F", "SI-F"];
+  const historyRanges = [
+    { id: "1h", label: "1H", seconds: 3600 },
+    { id: "6h", label: "6H", seconds: 21600 },
+    { id: "24h", label: "24H", seconds: 86400 },
+  ];
+
+  const apiKey = localStorage.getItem("apiKey") || "";
+  const apiBase = window.location.hostname === "localhost" ? "http://localhost:8000" : "";
+  const headers = apiKey ? { "X-API-Key": apiKey } : {};
+
+  const selectedHistorySymbols = compareMode
+    ? compareSymbols
+    : [historySymbol];
+
   useEffect(() => {
     let ws;
     let reconnectTimeout;
 
     const connect = () => {
-      // 確保後端 (backend/main.py) 已啟動 (uvicorn backend.main:app --reload)
-      // 目前後端預設設定 (config.py) 允許任意 API Key，除非在 .env 設定了鎖定。
-      const apiKey = "dev_key";
-      
       // 1. Initial Fetch (防止 WebSocket 連線前空白)
-      fetch(`http://localhost:8000/api/v1/latest?symbols=XAU-USD,XAG-USD,USD-TWD,PAXG-USD,GC-F,SI-F,XAG-USDT,XAU-USDT,DXY,US10Y,HG-F,CL-F,VIX,GDX,SIL`, {
-        headers: { 'X-API-Key': apiKey }
+      fetch(`${apiBase}/api/v1/latest?symbols=XAU-USD,XAG-USD,USD-TWD,PAXG-USD,GC-F,SI-F,XAG-USDT,XAU-USDT,DXY,US10Y,HG-F,CL-F,VIX,GDX,SIL`, {
+        headers,
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.data) {
-           const initialData = {};
-           Object.keys(data.data).forEach(key => {
-             initialData[key] = data.data[key];
-           });
-           setMarketData(prev => ({...prev, ...initialData}));
-           marketDataRef.current = {...marketDataRef.current, ...initialData};
-        }
-      })
-      .catch(err => console.error("Initial fetch error:", err));
+        .then(res => res.json())
+        .then(data => {
+          if (data.data) {
+            const initialData = {};
+            Object.keys(data.data).forEach(key => {
+              initialData[key] = data.data[key];
+            });
+            setMarketData(prev => ({ ...prev, ...initialData }));
+            marketDataRef.current = { ...marketDataRef.current, ...initialData };
+          }
+        })
+        .catch(err => console.error("Initial fetch error:", err));
 
       // 自動判斷 WebSocket 網址
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const host = window.location.host; // liro.world
+      const host = window.location.host; // goldlab.cloud
+      const wsQuery = apiKey ? `?api_key=${encodeURIComponent(apiKey)}` : "";
       // 如果是在 localhost 開發，可能還是連到 8000；如果在生產環境，則是 host 本身 (透過 Nginx /ws)
-      const wsUrl = window.location.hostname === "localhost" 
-        ? `ws://localhost:8000/ws/stream?api_key=${apiKey}`
-        : `${protocol}//${host}/ws/stream?api_key=${apiKey}`;
+      const wsUrl = window.location.hostname === "localhost"
+        ? `ws://localhost:8000/ws/stream${wsQuery}`
+        : `${protocol}//${host}/ws/stream${wsQuery}`;
 
       ws = new WebSocket(wsUrl);
 
@@ -625,6 +862,50 @@ const DashboardSection = () => {
     };
   }, []);
 
+  useEffect(() => {
+    let historyTimer;
+
+    const range = historyRanges.find((r) => r.id === historyRange) || historyRanges[1];
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    let start = Math.floor(nowSeconds - range.seconds);
+    let end = undefined;
+
+    if (useCustomRange && customStart) {
+      const startMs = new Date(customStart).getTime();
+      if (!Number.isNaN(startMs)) {
+        start = Math.floor(startMs / 1000);
+      }
+    }
+    if (useCustomRange && customEnd) {
+      const endMs = new Date(customEnd).getTime();
+      if (!Number.isNaN(endMs)) {
+        end = Math.floor(endMs / 1000);
+      }
+    }
+    const query = selectedHistorySymbols.join(",");
+
+    const fetchHistory = () => {
+      const endQuery = end ? `&end=${end}` : "";
+      fetch(`${apiBase}/api/v1/history?symbols=${query}&start=${start}${endQuery}&limit=2000`, {
+        headers,
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.data) {
+            setHistoryData((prev) => ({ ...prev, ...data.data }));
+          }
+        })
+        .catch((err) => console.error("History fetch error:", err));
+    };
+
+    fetchHistory();
+    historyTimer = setInterval(fetchHistory, 60000);
+
+    return () => {
+      clearInterval(historyTimer);
+    };
+  }, [historyRange, compareMode, historySymbol, compareSymbols.join("|"), useCustomRange, customStart, customEnd, apiBase, apiKey]);
+
   return (
     <div className="pt-24 pb-8 px-4 sm:px-6 lg:px-8 max-w-[1440px] mx-auto">
       {/* Header 區域縮減高度 */}
@@ -653,8 +934,8 @@ const DashboardSection = () => {
       {/* 第一排：市場概覽 (TradingView + USD/FX) */}
       <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-[1440px] mx-auto">市場概覽 (Overview)</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto mb-8">
-         {/* 美元匯率 */}
-         <AssetCard
+        {/* 美元匯率 */}
+        <AssetCard
           name="美元匯率"
           symbol="USD-TWD"
           price={marketData["USD-TWD"]?.price}
@@ -717,17 +998,160 @@ const DashboardSection = () => {
         />
       </div>
 
+      {/* 歷史走勢 */}
+      <div className="max-w-[1440px] mx-auto mb-10">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-3">
+          <h3 className="text-lg font-semibold text-slate-300">歷史走勢 (History)</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
+              {historyRanges.map((range) => (
+                <button
+                  key={range.id}
+                  onClick={() => setHistoryRange(range.id)}
+                  disabled={useCustomRange}
+                  className={`text-xs px-2 py-1 rounded border ${historyRange === range.id
+                    ? "border-emerald-500/50 text-emerald-300 bg-emerald-500/10"
+                    : "border-slate-700 text-slate-400 hover:text-slate-200"}
+                  `}
+                >
+                  {range.label}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setCompareMode((prev) => !prev)}
+              className={`text-xs px-2 py-1 rounded border ${compareMode
+                ? "border-blue-500/50 text-blue-300 bg-blue-500/10"
+                : "border-slate-700 text-slate-400 hover:text-slate-200"}
+              `}
+            >
+              {compareMode ? "多條線" : "單一"}
+            </button>
+            {compareMode && (
+              <button
+                onClick={() => setSharedScale((prev) => !prev)}
+                className={`text-xs px-2 py-1 rounded border ${sharedScale
+                  ? "border-purple-500/50 text-purple-300 bg-purple-500/10"
+                  : "border-slate-700 text-slate-400 hover:text-slate-200"}
+                `}
+              >
+                {sharedScale ? "同一尺度" : "各自尺度"}
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setUseCustomRange((prev) => {
+                  const next = !prev;
+                  if (next) {
+                    const now = new Date();
+                    const start = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+                    const pad = (n) => String(n).padStart(2, "0");
+                    const toLocalInput = (date) =>
+                      `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+                    setCustomStart((prevStart) => prevStart || toLocalInput(start));
+                    setCustomEnd((prevEnd) => prevEnd || toLocalInput(now));
+                  }
+                  return next;
+                });
+              }}
+              className={`text-xs px-2 py-1 rounded border ${useCustomRange
+                ? "border-emerald-500/50 text-emerald-300 bg-emerald-500/10"
+                : "border-slate-700 text-slate-400 hover:text-slate-200"}
+              `}
+            >
+              自訂範圍
+            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {historySymbols.map((sym) => (
+                <button
+                  key={sym}
+                  onClick={() => {
+                    if (compareMode) {
+                      setCompareSymbols((prev) =>
+                        prev.includes(sym)
+                          ? prev.filter((s) => s !== sym)
+                          : [...prev, sym]
+                      );
+                    } else {
+                      setHistorySymbol(sym);
+                    }
+                  }}
+                  className={`text-xs px-2 py-1 rounded border ${compareMode
+                    ? compareSymbols.includes(sym)
+                      ? "border-blue-500/50 text-blue-300 bg-blue-500/10"
+                      : "border-slate-700 text-slate-400 hover:text-slate-200"
+                    : historySymbol === sym
+                      ? "border-emerald-500/50 text-emerald-300 bg-emerald-500/10"
+                      : "border-slate-700 text-slate-400 hover:text-slate-200"}
+                  `}
+                >
+                  {sym}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        {useCustomRange && (
+          <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+            <div className="flex items-center gap-2">
+              <span>開始</span>
+              <input
+                type="datetime-local"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                className="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span>結束</span>
+              <input
+                type="datetime-local"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                className="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200"
+              />
+            </div>
+            <button
+              onClick={() => {
+                setCustomStart("");
+                setCustomEnd("");
+              }}
+              className="text-xs px-2 py-1 rounded border border-slate-700 text-slate-400 hover:text-slate-200"
+            >
+              清除
+            </button>
+            <span className="text-[10px] text-slate-500">
+              變更時間後會自動重新載入
+            </span>
+          </div>
+        )}
+        <div className="bg-slate-900 ring-1 ring-slate-800 rounded-xl p-4">
+          {compareMode ? (
+            <MultiHistoryChart
+              symbols={selectedHistorySymbols}
+              seriesMap={historyData}
+              sharedScale={sharedScale}
+            />
+          ) : (
+            <HistoryChart
+              symbol={historySymbol}
+              history={historyData[historySymbol]}
+            />
+          )}
+        </div>
+      </div>
+
       {/* 黃金區 (Gold) */}
       <div className="flex items-center justify-between mb-4 max-w-[1440px] mx-auto">
         <h3 className="text-lg font-semibold text-slate-300">黃金 (Gold)</h3>
-        <SpreadIndicator 
-          spotPrice={marketData["XAU-USD"]?.price} 
-          futurePrice={marketData["XAU-USDT"]?.price} 
+        <SpreadIndicator
+          spotPrice={marketData["XAU-USD"]?.price}
+          futurePrice={marketData["XAU-USDT"]?.price}
         />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto mb-8">
         <div className="w-full">
-            <TradingViewWidget type="gold" />
+          <TradingViewWidget type="gold" />
         </div>
         <AssetCard
           name="黃金現貨"
@@ -779,14 +1203,14 @@ const DashboardSection = () => {
       {/* 白銀區 (Silver) */}
       <div className="flex items-center justify-between mb-4 max-w-[1440px] mx-auto">
         <h3 className="text-lg font-semibold text-slate-300">白銀 (Silver)</h3>
-        <SpreadIndicator 
-          spotPrice={marketData["XAG-USD"]?.price} 
-          futurePrice={marketData["XAG-USDT"]?.price} 
+        <SpreadIndicator
+          spotPrice={marketData["XAG-USD"]?.price}
+          futurePrice={marketData["XAG-USDT"]?.price}
         />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto mb-16">
         <div className="w-full">
-            <TradingViewWidget type="silver" />
+          <TradingViewWidget type="silver" />
         </div>
         <AssetCard
           name="白銀現貨"
@@ -873,9 +1297,9 @@ const CoreTechSection = () => (
         {/* Left: Professional Visual Diagram */}
         <div className="relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-1000"></div>
-          <img 
-            src="/flow_diagram.png" 
-            alt="FlashRates System Architecture" 
+          <img
+            src="/flow_diagram.png"
+            alt="Goldlab.cloud System Architecture"
             className="relative rounded-xl border border-slate-700 w-full shadow-2xl"
           />
         </div>
@@ -1057,11 +1481,10 @@ const CodeBlock = () => {
             <button
               key={l}
               onClick={() => setLang(l)}
-              className={`px-3 py-1 rounded text-xs font-medium transition-all ${
-                lang === l
-                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20"
-                  : "text-slate-400 hover:text-white"
-              }`}
+              className={`px-3 py-1 rounded text-xs font-medium transition-all ${lang === l
+                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20"
+                : "text-slate-400 hover:text-white"
+                }`}
             >
               {l.toUpperCase()}
             </button>
@@ -1173,7 +1596,7 @@ const DocsSection = () => {
               </span>
             </h1>
             <p className="text-slate-400 text-lg mb-8">
-              FlashRates API
+              Goldlab.cloud API
               支援同時請求多種貴金屬與法幣匯率數據。透過在參數中指定多個{" "}
               <code>symbol</code>， 您可以在單次請求中獲取整個市場的即時快照。
             </p>
@@ -1271,7 +1694,7 @@ Authorization: Bearer YOUR_API_KEY`}
                     WebSocket Query
                   </div>
                   <pre className="text-sm text-slate-300 font-mono">
-                    {`ws://localhost:8000/ws/stream?api_key=YOUR_API_KEY`}
+                    {`wss://goldlab.cloud/ws/stream?api_key=YOUR_API_KEY`}
                   </pre>
                 </div>
               </div>
@@ -1372,7 +1795,7 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz`}
                 <li>
                   WebSocket：
                   <span className="font-mono text-slate-200">
-                    ws://localhost:8000/ws/stream?api_key=&lt;YOUR_API_KEY&gt;
+                    wss://goldlab.cloud/ws/stream?api_key=&lt;YOUR_API_KEY&gt;
                   </span>
                 </li>
                 <li>Rate Limit：預設每分鐘 120 次 + 30 次突發</li>
@@ -1421,14 +1844,14 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz`}
             </div>
 
             <div id="endpoint-ws" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">
-            <h2 className="text-xl font-bold text-white mb-4">
-              WebSocket 即時推送
-            </h2>
-            <p className="text-slate-400 mb-4">
-              連線後會訂閱所有資產頻道，伺服器會推送各資產的最新聚合結果，包含 is_market_open 欄位。
-            </p>
-            <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto">
-              {`ws://localhost:8000/ws/stream?api_key=YOUR_API_KEY
+              <h2 className="text-xl font-bold text-white mb-4">
+                WebSocket 即時推送
+              </h2>
+              <p className="text-slate-400 mb-4">
+                連線後會訂閱所有資產頻道，伺服器會推送各資產的最新聚合結果，包含 is_market_open 欄位。
+              </p>
+              <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto">
+                {`wss://goldlab.cloud/ws/stream?api_key=YOUR_API_KEY
 
 // 伺服器推送範例
 {
@@ -1441,53 +1864,52 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz`}
   "fastestLatency": 42.3,
   "avgLatency": 88.4
 }`}
-            </pre>
-          </div>
+              </pre>
+            </div>
 
-          <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12">
-            <h2 className="text-xl font-bold text-white mb-4">管理端 API</h2>
-            <ul className="text-sm text-slate-400 space-y-2">
-              <li>
-                <span className="font-mono text-slate-200">
-                  GET /api/v1/admin/keys
-                </span>{" "}
-                列出 key 狀態
-              </li>
-              <li>
-                <span className="font-mono text-slate-200">
-                  POST /api/v1/admin/keys/add
-                </span>{" "}
-                新增 Redis key
-              </li>
-              <li>
-                <span className="font-mono text-slate-200">
-                  POST /api/v1/admin/keys/remove
-                </span>{" "}
-                移除 Redis key
-              </li>
-              <li>
-                <span className="font-mono text-slate-200">
-                  POST /api/v1/admin/keys/disable
-                </span>{" "}
-                停用 key
-              </li>
-              <li>
-                <span className="font-mono text-slate-200">
-                  POST /api/v1/admin/keys/enable
-                </span>{" "}
-                啟用 key
-              </li>
-            </ul>
+            <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12">
+              <h2 className="text-xl font-bold text-white mb-4">管理端 API</h2>
+              <ul className="text-sm text-slate-400 space-y-2">
+                <li>
+                  <span className="font-mono text-slate-200">
+                    GET /api/v1/admin/keys
+                  </span>{" "}
+                  列出 key 狀態
+                </li>
+                <li>
+                  <span className="font-mono text-slate-200">
+                    POST /api/v1/admin/keys/add
+                  </span>{" "}
+                  新增 Redis key
+                </li>
+                <li>
+                  <span className="font-mono text-slate-200">
+                    POST /api/v1/admin/keys/remove
+                  </span>{" "}
+                  移除 Redis key
+                </li>
+                <li>
+                  <span className="font-mono text-slate-200">
+                    POST /api/v1/admin/keys/disable
+                  </span>{" "}
+                  停用 key
+                </li>
+                <li>
+                  <span className="font-mono text-slate-200">
+                    POST /api/v1/admin/keys/enable
+                  </span>{" "}
+                  啟用 key
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 };
 
-const AdminSection = () => {
-  const [adminKey, setAdminKey] = useState("");
+const AdminSection = ({ adminKey, setAdminKey, apiBase }) => {
   const [keys, setKeys] = useState([]);
   const [newKey, setNewKey] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1498,7 +1920,7 @@ const AdminSection = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:8000/api/v1/admin/keys", {
+      const res = await fetch(`${apiBase}/api/v1/admin/keys`, {
         headers: { "X-API-Key": adminKey },
       });
       if (!res.ok) {
@@ -1521,7 +1943,7 @@ const AdminSection = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:8000/api/v1/admin/keys/add", {
+      const res = await fetch(`${apiBase}/api/v1/admin/keys/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1546,7 +1968,7 @@ const AdminSection = () => {
     setError("");
     try {
       const res = await fetch(
-        "http://localhost:8000/api/v1/admin/keys/remove",
+        `${apiBase}/api/v1/admin/keys/remove`,
         {
           method: "POST",
           headers: {
@@ -1573,8 +1995,8 @@ const AdminSection = () => {
     setError("");
     try {
       const endpoint = disable
-        ? "http://localhost:8000/api/v1/admin/keys/disable"
-        : "http://localhost:8000/api/v1/admin/keys/enable";
+        ? `${apiBase}/api/v1/admin/keys/disable`
+        : `${apiBase}/api/v1/admin/keys/enable`;
       const res = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -1760,6 +2182,11 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [adminKey, setAdminKey] = useState("");
+  const apiBase = window.location.hostname === "localhost" ? "http://localhost:8000" : "";
+  const contactEmail = "colinjen88@gmail.com";
+  const contactTelegramLink = "https://t.me/colinjen88";
 
   const handleAdminClick = () => {
     if (!isAdminLoggedIn) {
@@ -1767,7 +2194,8 @@ export default function App() {
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = (key) => {
+    setAdminKey(key);
     setIsAdminLoggedIn(true);
     setActiveTab("admin");
   };
@@ -1779,12 +2207,21 @@ export default function App() {
         setActiveTab={setActiveTab}
         isAdminLoggedIn={isAdminLoggedIn}
         onAdminClick={handleAdminClick}
+        onContactClick={() => setShowContactModal((prev) => !prev)}
       />
 
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         onLogin={handleLogin}
+        apiBase={apiBase}
+      />
+
+      <ContactModal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+        telegramLink={contactTelegramLink}
+        email={contactEmail}
       />
 
       <main className="relative">
@@ -1794,7 +2231,13 @@ export default function App() {
         {activeTab === "dashboard" && <DashboardSection />}
         {activeTab === "features" && <CoreTechSection />}
         {activeTab === "docs" && <DocsSection />}
-        {activeTab === "admin" && isAdminLoggedIn && <AdminSection />}
+        {activeTab === "admin" && isAdminLoggedIn && (
+          <AdminSection
+            adminKey={adminKey}
+            setAdminKey={setAdminKey}
+            apiBase={apiBase}
+          />
+        )}
       </main>
 
       <footer className="bg-slate-900 border-t border-slate-800 py-12 mt-12 relative z-10">
@@ -1804,14 +2247,21 @@ export default function App() {
               <Zap className="text-emerald-500 w-4 h-4" />
             </div>
             <span className="text-slate-300 font-bold flex items-center gap-2">
-              FlashRates.WANG
+              Goldlab.cloud
               <span className="text-[9px] text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1 py-0.5 rounded font-medium">
                 BETA
               </span>
             </span>
           </div>
           <div className="text-slate-500 text-sm">
-            © 2026 High-Freq Systems. All rights reserved.
+            © 2026{" "}
+            <a
+              href="mailto:colinjen88@gmail.com"
+              style={{ color: "inherit", textDecoration: "none" }}
+            >
+              colinjen
+            </a>
+            . All rights reserved.
           </div>
           <div className="flex gap-6 text-slate-400">
             <a href="https://github.com/colinjen88/FlashRates" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">

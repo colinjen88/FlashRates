@@ -17,7 +17,7 @@ class ExchangerateHostSource(BaseSource):
     URL = "https://api.exchangerate.host/latest"
 
     def __init__(self):
-        super().__init__("exchangerate.host", priority=3)
+        super().__init__("exchangerate.host", priority=3, supported_symbols={"USD-TWD"})
         self.weight = 0.5
 
     async def fetch_price(self, symbol: str) -> Optional[float]:

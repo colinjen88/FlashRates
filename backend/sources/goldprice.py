@@ -14,7 +14,9 @@ class GoldPriceOrgSource(BaseSource):
     URL = "https://data-asg.goldprice.org/dbXRates/USD"
     
     def __init__(self):
-        super().__init__("GoldPrice.org", priority=2)
+        super().__init__("GoldPrice.org", priority=2, supported_symbols={
+            "XAU-USD", "XAG-USD",
+        })
         self.weight = 0.6
 
     async def fetch_price(self, symbol: str) -> Optional[float]:

@@ -15,7 +15,7 @@ class FawazahmedSource(BaseSource):
     URL = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json"
     
     def __init__(self):
-        super().__init__("Fawaz API", priority=5)
+        super().__init__("Fawaz API", priority=5, supported_symbols={"USD-TWD"})
         self.weight = 0.5  # 基礎權重，因更新頻率較慢
 
     async def fetch_price(self, symbol: str) -> Optional[float]:

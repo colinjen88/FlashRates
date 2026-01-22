@@ -15,7 +15,9 @@ class BinanceSource(BaseSource):
     FUTURES_URL = "https://fapi.binance.com/fapi/v1/ticker/price"
     
     def __init__(self):
-        super().__init__("Binance", priority=1)
+        super().__init__("Binance", priority=1, supported_symbols={
+            "PAXG-USD", "XAG-USDT", "XAU-USDT",
+        })
         self.weight = 0.8  # 高權重
 
     async def fetch_price(self, symbol: str) -> Optional[float]:
