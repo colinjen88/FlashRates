@@ -1,14 +1,14 @@
 module.exports = {
   apps: [
     {
-      name: "flashrates-backend",
+      name: "goldlab-cloud-backend",
       script: "./start.sh",
       interpreter: "bash",
-      cwd: "/var/www/flashrates",
+      cwd: "/var/www/goldlab-cloud",
       env: {
         ADMIN_API_KEYS: "abcabc_wang_1688",
-        API_KEYS: "fr_demo,fr_user1,fr_user2",
-        PYTHONPATH: "/var/www/flashrates"
+        API_KEYS: "gl_demo,gl_user1,gl_user2",
+        PYTHONPATH: "/var/www/goldlab-cloud"
       }
     }
   ]

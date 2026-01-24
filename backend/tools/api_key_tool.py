@@ -15,7 +15,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate API keys for Goldlab.cloud")
     parser.add_argument("--count", type=int, default=2, help="Number of keys to generate")
     parser.add_argument("--length", type=int, default=DEFAULT_LENGTH, help="Length of key body")
-    parser.add_argument("--prefix", type=str, default="fr_", help="Key prefix")
+    parser.add_argument("--prefix", type=str, default="gl_", help="Key prefix")
     args = parser.parse_args()
 
     keys = [generate_key(args.length, args.prefix) for _ in range(args.count)]

@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: flashrates-backend
+    container_name: goldlab-cloud-backend
     restart: always
     environment:
       - REDIS_HOST=redis
@@ -16,7 +16,7 @@ services:
 
   frontend:
     image: nginx:alpine
-    container_name: flashrates-frontend
+    container_name: goldlab-cloud-frontend
     restart: always
     volumes:
       - ./frontend/dist:/usr/share/nginx/html
@@ -30,5 +30,5 @@ services:
 
   redis:
     image: redis:alpine
-    container_name: flashrates-redis
+    container_name: goldlab-cloud-redis
     restart: always

@@ -1,6 +1,6 @@
 $VPS_HOST = "goldlab.cloud"
 $VPS_USER = "root"
-$PROJECT_DIR = "/home/docker-server/projects/flashrates"
+$PROJECT_DIR = "/home/docker-server/projects/goldlab-cloud"
 
 Write-Host "🚀 Starting Docker Deployment to $VPS_HOST..." -ForegroundColor Cyan
 

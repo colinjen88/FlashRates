@@ -1,7 +1,5 @@
 # Goldlab.cloud - 高頻匯率數據聚合系統 v2.9
 
-> 專案代號仍為 FlashRates（程式碼/資料夾命名不強制更動），站名與網域已更新為 Goldlab.cloud。
-
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)]()
 [![React](https://img.shields.io/badge/react-18+-61DAFB.svg)]()
@@ -29,7 +27,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        Goldlab.cloud 系統架構                         │
+│                         Goldlab.cloud 系統架構                       │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │
@@ -118,7 +116,7 @@ npm run dev
 ## 📁 專案結構
 
 ```
-FlashRates/
+Goldlab.cloud/
 ├── 📂 backend/                    # 後端 Python 服務
 │   ├── 📂 sources/                # 數據源連接器
 │   │   ├── base.py               # 抽象基類
@@ -212,39 +210,6 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 }
 ```
 
-#### `GET /api/v1/history`
-
-查詢歷史資料（來源為 Redis sorted set）。
-
-**參數：**
-
-- `symbols`: 逗號分隔 (預設 `xau-usd,xag-usd,usd-twd`)
-- `start`: 起始時間戳 (Unix 秒，可選)
-- `end`: 結束時間戳 (Unix 秒，可選)
-- `limit`: 回傳筆數上限 (預設 300，最大 5000)
-
-**回應範例：**
-
-```json
-{
-  "timestamp": 1705500000.123,
-  "data": {
-    "XAU-USD": [
-      {
-        "symbol": "XAU-USD",
-        "price": 2650.45,
-        "timestamp": 1705499900.1,
-        "sources": 6,
-        "details": ["Binance", "GoldPrice.org"],
-        "fastest": "Binance",
-        "avgLatency": 150.5,
-        "is_market_open": true
-      }
-    ]
-  }
-}
-```
-
 ### WebSocket
 
 #### `WS /ws/stream`
@@ -253,7 +218,7 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 
 **認證方式：**
 
-- Query: `wss://goldlab.cloud/ws/stream?api_key=YOUR_API_KEY`
+- Query: `ws://localhost:8000/ws/stream?api_key=dev_key`
 - 或在 Header 帶 `X-API-Key`
 
 **推送訊息格式：**
@@ -302,11 +267,6 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 
 - Header: `X-API-Key: <ADMIN_API_KEY>`
 
-**前端管理端登入方式：**
-
-- 以「管理員 API Key」驗證（不再使用前端硬編帳密）
-- 驗證成功後才顯示管理端操作介面
-
 #### `GET /api/v1/admin/keys`
 
 列出所有 API Key 及其停用狀態。
@@ -318,7 +278,7 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 停用指定 API Key。
 
 ```json
-{ "key": "fr_xxx" }
+{ "key": "gl_xxx" }
 ```
 
 #### `POST /api/v1/admin/keys/enable`
@@ -326,7 +286,7 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 啟用指定 API Key。
 
 ```json
-{ "key": "fr_xxx" }
+{ "key": "gl_xxx" }
 ```
 
 #### `POST /api/v1/admin/keys/add`
@@ -334,7 +294,7 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 新增 API Key（寫入 Redis）。
 
 ```json
-{ "key": "fr_xxx" }
+{ "key": "gl_xxx" }
 ```
 
 #### `POST /api/v1/admin/keys/remove`
@@ -342,7 +302,7 @@ API_KEYS=fr_xxx,fr_yyy,fr_zzz
 移除 Redis 內的 API Key（`.env` 內的 key 需手動移除並重啟）。
 
 ```json
-{ "key": "fr_xxx" }
+{ "key": "gl_xxx" }
 ```
 
 ---
@@ -463,29 +423,11 @@ T=5.0s: Yahoo Finance 請求
 - 提供 cURL, Python, JavaScript 代碼範例
 - 一鍵複製功能
 
-### 歷史走勢 (History)
-
-- 支援 1H / 6H / 24H 快速區間切換
-- 自訂時間區間（開始/結束）
-- 單一資產或多條線比較
-- 多條線可切換「同一尺度 / 各自尺度」
-
-### SEO / Schema / Sitemap
-
-- SEO meta、Open Graph、Twitter Card、Schema.org JSON-LD：`frontend/index.html`
-- Robots 規則：`frontend/public/robots.txt`
-- Sitemap：`frontend/public/sitemap.xml`（並於 robots 宣告 `Sitemap: https://goldlab.cloud/sitemap.xml`）
-- 預設分享圖：使用 `frontend/public/flow_diagram.png` 作為 `og:image`
-
-> 若要部署到不同網域，請同步更新 `canonical`、`og:url` 與 `sitemap.xml` 內的 URL。
-
 ---
 
 ## ⚙️ 配置說明
 
 ### 環境變數 (`.env`)
-
-建議先複製範例檔再填值：`copy .env.example .env`（Windows）或 `cp .env.example .env`（Linux/macOS）。
 
 ```env
 # Redis 配置 (可選，未配置時使用 FakeRedis)
@@ -499,19 +441,12 @@ APP_NAME=Goldlab.cloud Aggregator
 DEBUG=false
 
 # API 認證
-API_KEYS=dev-key-1,dev-key-2
+API_KEYS=gl_demo,gl_user1
 ADMIN_API_KEYS=admin-key-1
 
 # Rate Limit (每分鐘 + 突發)
 RATE_LIMIT_PER_MINUTE=120
 RATE_LIMIT_BURST=30
-
-# 歷史資料保留
-HISTORY_RETENTION_HOURS=24
-HISTORY_MAX_POINTS=10000
-
-# 前端可選 API Key
-# 若需要前端自動帶 key，可自行存入 localStorage: apiKey
 ```
 
 ### Vite 配置 (`frontend/vite.config.js`)
@@ -532,7 +467,7 @@ export default defineConfig({
 ### 運行測試
 
 ```bash
-cd FlashRates
+cd Goldlab.cloud
 python -m pytest tests/test_system.py -v
 ```
 
@@ -540,7 +475,6 @@ python -m pytest tests/test_system.py -v
 
 1. 在 `backend/sources/` 建立新檔案，繼承 `BaseSource`
 2. 實作 `fetch_price(symbol)` 方法
-3. 於建構子標註 `supported_symbols`，避免不支援資產被輪詢
 3. 在 `backend/main.py` 中加入到 `sources` 列表
 4. 在 `backend/scheduler.py` 的 `SOURCE_CONFIG` 加入輪詢配置
 
@@ -560,7 +494,6 @@ python -m pytest tests/test_system.py -v
 
 | 版本 | 日期       | 說明                  |
 | ---- | ---------- | --------------------- |
-| v2.10 | 2026-01-22 | 前端管理端改為 API Key 驗證；來源輪詢加入支援資產過濾；價格依資產調整小數位；Rate Limit 加入記憶體清理 | 
 | v2.9 | 2026-01-21 | 新增市場時間判斷 (`is_market_open`)：每日休市 (17:00-18:00 ET)、週末休市、美國假日休市 (MLK Day, 感恩節等)；支援夏/冬令時間自動切換 |
 | v2.8 | 2026-01-20 | 新增相關指標 (DXY, US10Y, 銅, 原油, VIX, GDX, SIL)；新增 Yahoo Finance 來源；新增「相關指標」區塊與連動關係表；Footer 版權與寬度調整 |
 | v2.7 | 2026-01-20 | 介面寬度擴增至 1440px；優化四欄式佈局；黃金/白銀區塊新增獨立 TradingView 走勢圖；調整卡片順序與標籤 |
@@ -575,7 +508,9 @@ python -m pytest tests/test_system.py -v
 
 ## 📝 待辦事項
 
+- [ ] 實作 Investing.com Playwright 爬蟲 (需要 playwright-stealth)
 - [ ] 新增 OANDA WebSocket 實時推送
+- [ ] 實作台灣銀行匯率牌告備援
 - [ ] 新增 IP 代理池 (Proxy Pool)
 - [ ] 部署至生產環境 (Nginx + Supervisord)
 

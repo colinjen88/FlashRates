@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-DEPLOY_DIR="/var/www/flashrates"
+DEPLOY_DIR="/var/www/goldlab-cloud"
 
 echo "=== Installing python3-venv ==="
 apt-get update
@@ -18,7 +18,7 @@ pip install -r requirements.txt
 
 echo ""
 echo "=== Starting Backend with PM2 ==="
-pm2 delete flashrates-backend 2>/dev/null || true
+pm2 delete goldlab-cloud-backend 2>/dev/null || true
 pm2 start ecosystem.config.js --interpreter ./venv/bin/python3
 pm2 save
 pm2 list
