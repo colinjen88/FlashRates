@@ -103,9 +103,7 @@ const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => setActiveTab("dashboard")}
           >
-            <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.4)]">
-              <Zap className="text-slate-900 w-5 h-5 fill-current" />
-            </div>
+            <img src="/logo.png" alt="Goldlab" className="w-10 h-10 rounded-lg shadow-lg border border-slate-700/50" />
             <span className="text-white font-bold text-xl tracking-tight flex items-center gap-2">
               Goldlab<span className="text-emerald-500">.cloud</span>
               <span className="text-[10px] text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded font-medium">
