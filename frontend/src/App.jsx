@@ -334,7 +334,6 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
       </div>
     </div>
   );
-  );
 };
 
 // --- Log Modal ---
@@ -1286,47 +1285,7 @@ const DocsSection = () => {
               <code>symbol</code>， 您可以在單次請求中獲取整個市場的即時快照。
             </p>
 
-            <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <Globe className="text-emerald-400 w-5 h-5" />
-                DNS 配置 (DNS Configuration)
-              </h2>
-              <p className="text-slate-400 mb-4">
-                若您使用 Cloudflare 管理 DNS，請參考以下設定以確保正確連線至 VPS。
-              </p>
-              <div className="bg-slate-950 p-4 rounded border border-slate-800 overflow-x-auto">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Cloudflare 設定範例
-                </div>
-                <div className="text-sm text-slate-300 mb-2">
-                  當前 VPS 公網 IP: <span className="text-emerald-400 font-mono">72.62.66.151</span>
-                </div>
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-800 text-slate-500 text-xs uppercase">
-                      <th className="py-2 pr-4">Type</th>
-                      <th className="py-2 pr-4">Name</th>
-                      <th className="py-2 pr-4">Content</th>
-                      <th className="py-2">Proxy</th>
-                    </tr>
-                  </thead>
-                  <tbody className="font-mono text-sm">
-                    <tr className="border-b border-slate-800/50">
-                      <td className="py-2 pr-4 text-yellow-400">A</td>
-                      <td className="py-2 pr-4 text-slate-300">@</td>
-                      <td className="py-2 pr-4 text-emerald-400">72.62.66.151</td>
-                      <td className="py-2 text-slate-400">DNS Only</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 pr-4 text-yellow-400">CNAME</td>
-                      <td className="py-2 pr-4 text-slate-300">www</td>
-                      <td className="py-2 pr-4 text-emerald-400">@</td>
-                      <td className="py-2 text-slate-400">DNS Only</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+
 
             <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
