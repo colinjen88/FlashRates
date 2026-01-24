@@ -161,6 +161,24 @@ async def get_metrics(api_key: str = Depends(verify_api_key)):
     return await get_metrics_snapshot()
 
 
+@app.get("/api/v1/spread-logs")
+async def get_spread_logs(limit: int = 100, api_key: str = Depends(verify_api_key)):
+    """獲取價差記錄"""
+    import os
+    log_file = "logs/spreads.log"
+    if not os.path.exists(log_file):
+        return {"logs": []}
+    
+    try:
+        with open(log_file, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            # Return last N lines reversed
+            return {"logs": [line.strip() for line in reversed(lines[-limit:])]}
+    except Exception as e:
+        logger.error(f"Error reading logs: {e}")
+        return {"logs": [], "error": str(e)}
+
+
 class AdminKeyPayload(BaseModel):
     key: str
 

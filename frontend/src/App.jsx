@@ -25,6 +25,8 @@ import {
   Eye,
   EyeOff,
   User,
+  FileText,
+  Clock,
 } from "lucide-react";
 
 // --- 管理端登入憑證 ---
@@ -332,6 +334,82 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
       </div>
     </div>
   );
+  );
+};
+
+// --- Log Modal ---
+const LogModal = ({ isOpen, onClose }) => {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setLoading(true);
+      fetch('/api/v1/spread-logs?limit=100', {
+        headers: { 'X-API-Key': 'dev_key' }
+      })
+      .then(res => res.json())
+      .then(data => {
+        setLogs(data.logs || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[80vh]">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500" />
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <FileText className="w-5 h-5 text-emerald-400" />
+                現貨vs幣安合約 價差{'>'}1%
+            </h2>
+            <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+                <X className="w-6 h-6" />
+            </button>
+        </div>
+        <div className="p-0 overflow-y-auto flex-1 bg-slate-950 font-mono text-xs sm:text-sm text-slate-300">
+            {loading ? (
+                <div className="p-8 text-center text-slate-500">載入中...</div>
+            ) : logs.length === 0 ? (
+                <div className="p-8 text-center text-slate-500">尚無超過 1% 的價差記錄</div>
+            ) : (
+                <table className="w-full text-left">
+                    <thead className="bg-slate-900 text-slate-400 sticky top-0">
+                        <tr>
+                            <th className="px-4 py-2 font-medium">記錄時間</th>
+                            <th className="px-4 py-2 font-medium">內容</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                        {logs.map((log, i) => {
+                            // Parse simple format if possible, otherwise just display
+                            // Expected: 2023-XX-XX... - Gold: Spot=...
+                            const parts = log.split(' - ');
+                            const time = parts[0] || '';
+                            const content = parts.slice(1).join(' - ') || log;
+                            return (
+                                <tr key={i} className="hover:bg-slate-900/50">
+                                    <td className="px-4 py-2 whitespace-nowrap text-slate-500">{time}</td>
+                                    <td className="px-4 py-2 text-emerald-300">{content}</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // 獨立的單一資產卡片組件，更新支援中文名稱
@@ -504,7 +582,10 @@ const AssetCard = ({
 // TradingView Widget Component (Iframe Method)
 // TradingView Widget Component (Iframe Method) - Now accepts type
 const TradingViewWidget = ({ type }) => {
-  const src = type === "silver" ? "/tv-silver.html" : "/tv-gold.html";
+  let src = "/tv-gold.html";
+  if (type === "silver") src = "/tv-silver.html";
+  if (type === "usdtwd") src = "/tv-usdtwd.html";
+  
   return (
     <div className="w-full h-[260px] bg-slate-900 ring-1 ring-slate-800 rounded-xl overflow-hidden shadow-2xl">
       <iframe
@@ -522,13 +603,13 @@ const DashboardSection = () => {
   const [marketData, setMarketData] = useState({});
   const [prevMarketData, setPrevMarketData] = useState({});
   const [isConnected, setIsConnected] = useState(false);
+  const [showLogModal, setShowLogModal] = useState(false);
   const marketDataRef = useRef({});
 
   const supportedCounts = {
     "XAU-USD": 10,  // 增加到 10 個來源 (新增 Gold-API, APMEX, Sina Spot)
     "XAG-USD": 9,   // 增加到 9 個來源 (新增 Gold-API, APMEX, Sina Spot)
     "USD-TWD": 12, // 12 個來源
-    "PAXG-USD": 1,
     "GC-F": 3,
     "SI-F": 3,
     "XAG-USDT": 1, // Binance Silver
@@ -552,7 +633,7 @@ const DashboardSection = () => {
       const apiKey = "dev_key";
       
       // 1. Initial Fetch (防止 WebSocket 連線前空白)
-      fetch(`/api/v1/latest?symbols=XAU-USD,XAG-USD,USD-TWD,PAXG-USD,GC-F,SI-F,XAG-USDT,XAU-USDT,DXY,US10Y,HG-F,CL-F,VIX,GDX,SIL`, {
+      fetch(`/api/v1/latest?symbols=XAU-USD,XAG-USD,USD-TWD,GC-F,SI-F,XAG-USDT,XAU-USDT,DXY,US10Y,HG-F,CL-F,VIX,GDX,SIL`, {
         headers: { 'X-API-Key': apiKey }
       })
       .then(res => res.json())
@@ -648,189 +729,218 @@ const DashboardSection = () => {
         </p>
       </div>
 
+      <LogModal isOpen={showLogModal} onClose={() => setShowLogModal(false)} />
+
       {/* 第一排：市場概覽 (TradingView + USD/FX) */}
-      <h3 className="text-lg font-semibold text-slate-300 mb-4 max-w-[1440px] mx-auto">市場概覽 (Overview)</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto mb-8">
-         {/* 美元匯率 */}
-         <AssetCard
-          name="美元匯率"
-          symbol="USD-TWD"
-          price={marketData["USD-TWD"]?.price}
-          prevPrice={prevMarketData["USD-TWD"]}
-          timestamp={marketData["USD-TWD"]?.timestamp}
-          source={marketData["USD-TWD"]?.details?.[0]}
-          fastest={marketData["USD-TWD"]?.fastest}
-          fastestLatency={marketData["USD-TWD"]?.fastestLatency}
-          avgLatency={marketData["USD-TWD"]?.avgLatency}
-          sourcesCount={marketData["USD-TWD"]?.sources}
-          supportedCount={supportedCounts["USD-TWD"]}
-          sources={marketData["USD-TWD"]?.details}
-          isMarketOpen={marketData["USD-TWD"]?.is_market_open}
-        />
-        <AssetCard
-          name="美元指數"
-          symbol="DXY"
-          price={marketData["DXY"]?.price}
-          prevPrice={prevMarketData["DXY"]}
-          timestamp={marketData["DXY"]?.timestamp}
-          source={marketData["DXY"]?.details?.[0]}
-          fastest={marketData["DXY"]?.fastest}
-          fastestLatency={marketData["DXY"]?.fastestLatency}
-          avgLatency={marketData["DXY"]?.avgLatency}
-          sourcesCount={marketData["DXY"]?.sources}
-          supportedCount={supportedCounts["DXY"]}
-          sources={marketData["DXY"]?.details}
-          isMarketOpen={marketData["DXY"]?.is_market_open}
-        />
-        <AssetCard
-          name="美債殖利率 (10Y)"
-          symbol="US10Y"
-          price={marketData["US10Y"]?.price}
-          prevPrice={prevMarketData["US10Y"]}
-          timestamp={marketData["US10Y"]?.timestamp}
-          source={marketData["US10Y"]?.details?.[0]}
-          fastest={marketData["US10Y"]?.fastest}
-          fastestLatency={marketData["US10Y"]?.fastestLatency}
-          avgLatency={marketData["US10Y"]?.avgLatency}
-          sourcesCount={marketData["US10Y"]?.sources}
-          supportedCount={supportedCounts["US10Y"]}
-          sources={marketData["US10Y"]?.details}
-          isMarketOpen={marketData["US10Y"]?.is_market_open}
-        />
-        {/* PAXG Moved Here */}
-        <AssetCard
-          name="PAXG 代幣"
-          symbol="PAXG-USD"
-          price={marketData["PAXG-USD"]?.price}
-          prevPrice={prevMarketData["PAXG-USD"]}
-          timestamp={marketData["PAXG-USD"]?.timestamp}
-          source={marketData["PAXG-USD"]?.details?.[0]}
-          fastest={marketData["PAXG-USD"]?.fastest}
-          fastestLatency={marketData["PAXG-USD"]?.fastestLatency}
-          avgLatency={marketData["PAXG-USD"]?.avgLatency}
-          sourcesCount={marketData["PAXG-USD"]?.sources}
-          supportedCount={supportedCounts["PAXG-USD"]}
-          sources={marketData["PAXG-USD"]?.details}
-          isMarketOpen={true}
-        />
+      <div className="flex items-center justify-between mb-4 max-w-[1440px] mx-auto">
+        <div className="flex items-center gap-3">
+            <h3 className="text-lg font-semibold text-slate-300 text-nowrap">市場概覽 (Overview)</h3>
+            <button 
+                onClick={() => setShowLogModal(true)}
+                className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
+            >
+                <FileText className="w-3 h-3" />
+                LOG 記錄
+            </button>
+        </div>
+      </div>
+      
+      <div className="flex flex-col lg:flex-row gap-6 max-w-[1440px] mx-auto mb-8">
+         {/* 1. TradingView USD-TWD (Fixed 360px) */}
+         <div className="w-full lg:w-[360px] lg:shrink-0 ring-1 ring-emerald-600 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+            <TradingViewWidget type="usdtwd" />
+         </div>
+
+         {/* Remaining items distribute width */}
+         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AssetCard
+                name="美元匯率"
+                symbol="USD-TWD"
+                price={marketData["USD-TWD"]?.price}
+                prevPrice={prevMarketData["USD-TWD"]}
+                timestamp={marketData["USD-TWD"]?.timestamp}
+                source={marketData["USD-TWD"]?.details?.[0]}
+                fastest={marketData["USD-TWD"]?.fastest}
+                fastestLatency={marketData["USD-TWD"]?.fastestLatency}
+                avgLatency={marketData["USD-TWD"]?.avgLatency}
+                sourcesCount={marketData["USD-TWD"]?.sources}
+                supportedCount={supportedCounts["USD-TWD"]}
+                sources={marketData["USD-TWD"]?.details}
+                isMarketOpen={marketData["USD-TWD"]?.is_market_open}
+            />
+            <AssetCard
+                name="美元指數"
+                symbol="DXY"
+                price={marketData["DXY"]?.price}
+                prevPrice={prevMarketData["DXY"]}
+                timestamp={marketData["DXY"]?.timestamp}
+                source={marketData["DXY"]?.details?.[0]}
+                fastest={marketData["DXY"]?.fastest}
+                fastestLatency={marketData["DXY"]?.fastestLatency}
+                avgLatency={marketData["DXY"]?.avgLatency}
+                sourcesCount={marketData["DXY"]?.sources}
+                supportedCount={supportedCounts["DXY"]}
+                sources={marketData["DXY"]?.details}
+                isMarketOpen={marketData["DXY"]?.is_market_open}
+            />
+            <AssetCard
+                name="美債殖利率 (10Y)"
+                symbol="US10Y"
+                price={marketData["US10Y"]?.price}
+                prevPrice={prevMarketData["US10Y"]}
+                timestamp={marketData["US10Y"]?.timestamp}
+                source={marketData["US10Y"]?.details?.[0]}
+                fastest={marketData["US10Y"]?.fastest}
+                fastestLatency={marketData["US10Y"]?.fastestLatency}
+                avgLatency={marketData["US10Y"]?.avgLatency}
+                sourcesCount={marketData["US10Y"]?.sources}
+                supportedCount={supportedCounts["US10Y"]}
+                sources={marketData["US10Y"]?.details}
+                isMarketOpen={marketData["US10Y"]?.is_market_open}
+            />
+         </div>
       </div>
 
       {/* 黃金區 (Gold) */}
       <div className="flex items-center justify-between mb-4 max-w-[1440px] mx-auto">
-        <h3 className="text-lg font-semibold text-slate-300">黃金 (Gold)</h3>
+        <div className="flex items-center gap-3">
+            <h3 className="text-lg font-semibold text-slate-300">黃金 (Gold)</h3>
+            <button 
+                onClick={() => setShowLogModal(true)}
+                className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
+            >
+                <FileText className="w-3 h-3" />
+                LOG 記錄
+            </button>
+        </div>
         <SpreadIndicator 
           spotPrice={marketData["XAU-USD"]?.price} 
           futurePrice={marketData["XAU-USDT"]?.price} 
         />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto mb-8">
-        <div className="w-full">
+      <div className="flex flex-col lg:flex-row gap-6 max-w-[1440px] mx-auto mb-8">
+        <div className="w-full lg:w-[360px] lg:shrink-0 ring-1 ring-emerald-600 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.1)]">
             <TradingViewWidget type="gold" />
         </div>
-        <AssetCard
-          name="黃金現貨"
-          symbol="XAU-USD"
-          price={marketData["XAU-USD"]?.price}
-          prevPrice={prevMarketData["XAU-USD"]}
-          timestamp={marketData["XAU-USD"]?.timestamp}
-          source={marketData["XAU-USD"]?.details?.[0]}
-          fastest={marketData["XAU-USD"]?.fastest}
-          fastestLatency={marketData["XAU-USD"]?.fastestLatency}
-          avgLatency={marketData["XAU-USD"]?.avgLatency}
-          sourcesCount={marketData["XAU-USD"]?.sources}
-          supportedCount={supportedCounts["XAU-USD"]}
-          sources={marketData["XAU-USD"]?.details}
-          isMarketOpen={marketData["XAU-USD"]?.is_market_open}
-        />
-        <AssetCard
-          name="幣安合約 (黃金)"
-          symbol="XAU-USDT"
-          price={marketData["XAU-USDT"]?.price}
-          prevPrice={prevMarketData["XAU-USDT"]}
-          timestamp={marketData["XAU-USDT"]?.timestamp}
-          source={marketData["XAU-USDT"]?.details?.[0]}
-          fastest={marketData["XAU-USDT"]?.fastest}
-          fastestLatency={marketData["XAU-USDT"]?.fastestLatency}
-          avgLatency={marketData["XAU-USDT"]?.avgLatency}
-          sourcesCount={marketData["XAU-USDT"]?.sources}
-          supportedCount={supportedCounts["XAU-USDT"]}
-          sources={marketData["XAU-USDT"]?.details}
-          isMarketOpen={true}
-        />
-        <AssetCard
-          name="黃金期貨"
-          symbol="GC-F"
-          price={marketData["GC-F"]?.price}
-          prevPrice={prevMarketData["GC-F"]}
-          timestamp={marketData["GC-F"]?.timestamp}
-          source={marketData["GC-F"]?.details?.[0]}
-          fastest={marketData["GC-F"]?.fastest}
-          fastestLatency={marketData["GC-F"]?.fastestLatency}
-          avgLatency={marketData["GC-F"]?.avgLatency}
-          sourcesCount={marketData["GC-F"]?.sources}
-          supportedCount={supportedCounts["GC-F"]}
-          sources={marketData["GC-F"]?.details}
-          isMarketOpen={marketData["GC-F"]?.is_market_open}
-        />
+        
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AssetCard
+            name="黃金現貨"
+            symbol="XAU-USD"
+            price={marketData["XAU-USD"]?.price}
+            prevPrice={prevMarketData["XAU-USD"]}
+            timestamp={marketData["XAU-USD"]?.timestamp}
+            source={marketData["XAU-USD"]?.details?.[0]}
+            fastest={marketData["XAU-USD"]?.fastest}
+            fastestLatency={marketData["XAU-USD"]?.fastestLatency}
+            avgLatency={marketData["XAU-USD"]?.avgLatency}
+            sourcesCount={marketData["XAU-USD"]?.sources}
+            supportedCount={supportedCounts["XAU-USD"]}
+            sources={marketData["XAU-USD"]?.details}
+            isMarketOpen={marketData["XAU-USD"]?.is_market_open}
+            />
+            <AssetCard
+            name="幣安合約 (黃金)"
+            symbol="XAU-USDT"
+            price={marketData["XAU-USDT"]?.price}
+            prevPrice={prevMarketData["XAU-USDT"]}
+            timestamp={marketData["XAU-USDT"]?.timestamp}
+            source={marketData["XAU-USDT"]?.details?.[0]}
+            fastest={marketData["XAU-USDT"]?.fastest}
+            fastestLatency={marketData["XAU-USDT"]?.fastestLatency}
+            avgLatency={marketData["XAU-USDT"]?.avgLatency}
+            sourcesCount={marketData["XAU-USDT"]?.sources}
+            supportedCount={supportedCounts["XAU-USDT"]}
+            sources={marketData["XAU-USDT"]?.details}
+            isMarketOpen={true}
+            />
+            <AssetCard
+            name="黃金期貨"
+            symbol="GC-F"
+            price={marketData["GC-F"]?.price}
+            prevPrice={prevMarketData["GC-F"]}
+            timestamp={marketData["GC-F"]?.timestamp}
+            source={marketData["GC-F"]?.details?.[0]}
+            fastest={marketData["GC-F"]?.fastest}
+            fastestLatency={marketData["GC-F"]?.fastestLatency}
+            avgLatency={marketData["GC-F"]?.avgLatency}
+            sourcesCount={marketData["GC-F"]?.sources}
+            supportedCount={supportedCounts["GC-F"]}
+            sources={marketData["GC-F"]?.details}
+            isMarketOpen={marketData["GC-F"]?.is_market_open}
+            />
+        </div>
       </div>
 
       {/* 白銀區 (Silver) */}
       <div className="flex items-center justify-between mb-4 max-w-[1440px] mx-auto">
-        <h3 className="text-lg font-semibold text-slate-300">白銀 (Silver)</h3>
+        <div className="flex items-center gap-3">
+            <h3 className="text-lg font-semibold text-slate-300">白銀 (Silver)</h3>
+            <button 
+                onClick={() => setShowLogModal(true)}
+                className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
+            >
+                <FileText className="w-3 h-3" />
+                LOG 記錄
+            </button>
+        </div>
         <SpreadIndicator 
           spotPrice={marketData["XAG-USD"]?.price} 
           futurePrice={marketData["XAG-USDT"]?.price} 
         />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto mb-16">
-        <div className="w-full">
+      <div className="flex flex-col lg:flex-row gap-6 max-w-[1440px] mx-auto mb-16">
+        <div className="w-full lg:w-[360px] lg:shrink-0 ring-1 ring-emerald-600 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.1)]">
             <TradingViewWidget type="silver" />
         </div>
-        <AssetCard
-          name="白銀現貨"
-          symbol="XAG-USD"
-          price={marketData["XAG-USD"]?.price}
-          prevPrice={prevMarketData["XAG-USD"]}
-          timestamp={marketData["XAG-USD"]?.timestamp}
-          source={marketData["XAG-USD"]?.details?.[0]}
-          fastest={marketData["XAG-USD"]?.fastest}
-          fastestLatency={marketData["XAG-USD"]?.fastestLatency}
-          avgLatency={marketData["XAG-USD"]?.avgLatency}
-          sourcesCount={marketData["XAG-USD"]?.sources}
-          supportedCount={supportedCounts["XAG-USD"]}
-          sources={marketData["XAG-USD"]?.details}
-          isMarketOpen={marketData["XAG-USD"]?.is_market_open}
-        />
-        <AssetCard
-          name="幣安合約 (白銀)"
-          symbol="XAG-USDT"
-          price={marketData["XAG-USDT"]?.price}
-          prevPrice={prevMarketData["XAG-USDT"]}
-          timestamp={marketData["XAG-USDT"]?.timestamp}
-          source={marketData["XAG-USDT"]?.details?.[0]}
-          fastest={marketData["XAG-USDT"]?.fastest}
-          fastestLatency={marketData["XAG-USDT"]?.fastestLatency}
-          avgLatency={marketData["XAG-USDT"]?.avgLatency}
-          sourcesCount={marketData["XAG-USDT"]?.sources}
-          supportedCount={supportedCounts["XAG-USDT"]}
-          sources={marketData["XAG-USDT"]?.details}
-          isMarketOpen={true}
-        />
-        <AssetCard
-          name="白銀期貨"
-          symbol="SI-F"
-          price={marketData["SI-F"]?.price}
-          prevPrice={prevMarketData["SI-F"]}
-          timestamp={marketData["SI-F"]?.timestamp}
-          source={marketData["SI-F"]?.details?.[0]}
-          fastest={marketData["SI-F"]?.fastest}
-          fastestLatency={marketData["SI-F"]?.fastestLatency}
-          avgLatency={marketData["SI-F"]?.avgLatency}
-          sourcesCount={marketData["SI-F"]?.sources}
-          supportedCount={supportedCounts["SI-F"]}
-          sources={marketData["SI-F"]?.details}
-          isMarketOpen={marketData["SI-F"]?.is_market_open}
-        />
+        
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AssetCard
+            name="白銀現貨"
+            symbol="XAG-USD"
+            price={marketData["XAG-USD"]?.price}
+            prevPrice={prevMarketData["XAG-USD"]}
+            timestamp={marketData["XAG-USD"]?.timestamp}
+            source={marketData["XAG-USD"]?.details?.[0]}
+            fastest={marketData["XAG-USD"]?.fastest}
+            fastestLatency={marketData["XAG-USD"]?.fastestLatency}
+            avgLatency={marketData["XAG-USD"]?.avgLatency}
+            sourcesCount={marketData["XAG-USD"]?.sources}
+            supportedCount={supportedCounts["XAG-USD"]}
+            sources={marketData["XAG-USD"]?.details}
+            isMarketOpen={marketData["XAG-USD"]?.is_market_open}
+            />
+             <AssetCard
+            name="幣安合約 (白銀)"
+            symbol="XAG-USDT"
+            price={marketData["XAG-USDT"]?.price}
+            prevPrice={prevMarketData["XAG-USDT"]}
+            timestamp={marketData["XAG-USDT"]?.timestamp}
+            source={marketData["XAG-USDT"]?.details?.[0]}
+            fastest={marketData["XAG-USDT"]?.fastest}
+            fastestLatency={marketData["XAG-USDT"]?.fastestLatency}
+            avgLatency={marketData["XAG-USDT"]?.avgLatency}
+            sourcesCount={marketData["XAG-USDT"]?.sources}
+            supportedCount={supportedCounts["XAG-USDT"]}
+            sources={marketData["XAG-USDT"]?.details}
+            isMarketOpen={true}
+            />
+            <AssetCard
+            name="白銀期貨"
+            symbol="SI-F"
+            price={marketData["SI-F"]?.price}
+            prevPrice={prevMarketData["SI-F"]}
+            timestamp={marketData["SI-F"]?.timestamp}
+            source={marketData["SI-F"]?.details?.[0]}
+            fastest={marketData["SI-F"]?.fastest}
+            fastestLatency={marketData["SI-F"]?.fastestLatency}
+            avgLatency={marketData["SI-F"]?.avgLatency}
+            sourcesCount={marketData["SI-F"]?.sources}
+            supportedCount={supportedCounts["SI-F"]}
+            sources={marketData["SI-F"]?.details}
+            isMarketOpen={marketData["SI-F"]?.is_market_open}
+            />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1440px] mx-auto">

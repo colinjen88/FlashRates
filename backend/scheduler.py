@@ -159,7 +159,8 @@ class Scheduler:
                             diff = spot_price - fut_price
                             pct = (diff / spot_price) * 100
                             
-                            log_entries.append(f"{name}: Spot={spot_price} Fut={fut_price} Diff={diff:.2f} ({pct:.2f}%)")
+                            if abs(pct) > 1:
+                                log_entries.append(f"{name}: Spot={spot_price} Fut={fut_price} Diff={diff:.2f} ({pct:.2f}%)")
                 
                 if log_entries:
                     spread_logger.info(" | ".join(log_entries))
@@ -167,7 +168,7 @@ class Scheduler:
             except Exception as e:
                 logger.error(f"Error logging spreads: {e}")
             
-            await asyncio.sleep(60)
+            await asyncio.sleep(15)
 
     async def run(self, symbols: List[str]):
         self.running = True
