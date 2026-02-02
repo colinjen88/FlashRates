@@ -32,14 +32,17 @@ class OpenErApiSource(BaseSource):
                 backoff=1.0,
             )
             if status != 200:
+                logger.warning(f"open.er-api.com returned status {status}")
                 return None
 
             if data.get("result") != "success":
+                logger.warning(f"open.er-api.com returned result={data.get('result')}")
                 return None
 
             rates = data.get("rates", {})
             if "TWD" in rates:
                 return float(rates["TWD"])
+            logger.warning("open.er-api.com missing TWD rate")
             return None
         except Exception as e:
             logger.warning(f"open.er-api.com fetch error: {e}")
