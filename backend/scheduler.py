@@ -56,58 +56,96 @@ class Scheduler:
         self._tasks: List[asyncio.Task] = []
         self._interval_scale: Dict[str, float] = {s.source_name: 1.0 for s in sources}
 
-    async def _poll_source(self, source: BaseSource, symbol: str):
-        """輪詢單一數據源"""
-        if not source.supports(symbol):
+    async def _source_control_loop(self, source: BaseSource, all_symbols: List[str]):
+        """以來源為中心的控制迴圈"""
+        # Filter symbols supported by this source
+        supported_symbols = [s for s in all_symbols if source.supports(s)]
+        if not supported_symbols:
+            logger.info(f"Source {source.source_name} supports no requested symbols. Worker exiting.")
             return
+
         config = SOURCE_CONFIG.get(source.source_name, {"interval": 10, "offset": 0})
         base_interval = config["interval"]
-        max_age = config.get("max_age", base_interval * 3)
-        
-        # 初始偏移
+        # Initial offset to stagger start times
         await asyncio.sleep(config["offset"])
         
+        logger.info(f"Source Worker started: {source.source_name} (Symbols: {len(supported_symbols)})")
+
         while self.running:
-            try:
-                if self.aggregator.circuit_breaker.is_available(source.source_name):
-                    result = await source.get_data(symbol)
-                    if result:
-                        # 如果市場關閉，放寬 max_age 以配合 30s 的輪詢間隔
-                        # 避免因為輪詢變慢導致數據被判定為過期
-                        current_max_age = max_age
-                        if not is_market_open(symbol) and "Binance" not in source.source_name:
-                            current_max_age = max(max_age, 60) # 至少 60 秒有效期
-                            
-                        result["max_age"] = current_max_age
-                        if symbol not in self.latest_results:
-                            self.latest_results[symbol] = {}
-                        self.latest_results[symbol][source.source_name] = result
-                        self._interval_scale[source.source_name] = max(
-                            1.0, self._interval_scale[source.source_name] * 0.9
-                        )
-                        await record_source_success(source.source_name, result.get("latency", 0))
-                    else:
-                        self.aggregator.circuit_breaker.record_failure(source.source_name)
-                        self._interval_scale[source.source_name] = min(
-                            4.0, self._interval_scale[source.source_name] * 1.5
-                        )
-                        await record_source_failure(source.source_name)
-                else:
-                    logger.debug(f"Skipping {source.source_name} due to circuit breaker")
-            except Exception as e:
-                logger.error(f"Error polling {source.source_name} for {symbol}: {e}")
-                self.aggregator.circuit_breaker.record_failure(source.source_name)
-                self._interval_scale[source.source_name] = min(
+            start_time = asyncio.get_event_loop().time()
+            
+            # Check Circuit Breaker
+            if not self.aggregator.circuit_breaker.is_available(source.source_name):
+                logger.debug(f"Circuit Breaker open for {source.source_name}")
+                await asyncio.sleep(min(30, base_interval * 2))
+                continue
+
+            # Fetch Strategy
+            # Ideally, sources support batch_fetch. For now, we iterate sequentially or gather.
+            # To avoid creating too many tasks per loop, we can just await sequentially for simplicity,
+            # or gather if the source is slow. Given most sources are HTTP, gather is better for throughput.
+            # But we must ensure specific source implementation handles concurrency (aiohttp session is shared).
+            
+            success_count = 0
+            
+            # Use gather for concurrency within the source (fetching multiple symbols)
+            # Cap concurrency to 3 at a time to avoid overwhelming single source or being flagged
+            chunk_size = 3
+            for i in range(0, len(supported_symbols), chunk_size):
+                chunk = supported_symbols[i:i + chunk_size]
+                results = await asyncio.gather(*[self._fetch_one(source, sym, config) for sym in chunk], return_exceptions=True)
+                for res in results:
+                    if res is True: success_count += 1
+            
+            # Adaptive Interval Logic
+            if success_count > 0:
+                # Reduce interval (speed up) if successful
+                self._interval_scale[source.source_name] = max(
+                    1.0, self._interval_scale[source.source_name] * 0.9
+                )
+            else:
+                 # Increase interval (slow down) if all failed
+                 self._interval_scale[source.source_name] = min(
                     4.0, self._interval_scale[source.source_name] * 1.5
                 )
-                await record_source_failure(source.source_name)
+
+            # Calculate sleep time
+            elapsed = asyncio.get_event_loop().time() - start_time
+            target_interval = base_interval * self._interval_scale[source.source_name]
             
-            # 動態調整輪詢間隔
-            # 如果市場關閉 (且非 24/7 的 Binance/Crypto 來源)，固定每 30 秒更新一次
-            if not is_market_open(symbol) and "Binance" not in source.source_name:
-                await asyncio.sleep(30)
+            # If any symbol is closed, maybe we can sleep longer? 
+            # Simplified: just stick to dynamic interval based on success rate.
+            
+            sleep_time = max(0.1, target_interval - elapsed)
+            await asyncio.sleep(sleep_time)
+
+    async def _fetch_one(self, source: BaseSource, symbol: str, config: dict) -> bool:
+        try:
+            max_age = config.get("max_age", config["interval"] * 3)
+            result = await source.get_data(symbol)
+            if result:
+                 # Adjust max_age if market closed
+                current_max_age = max_age
+                if not is_market_open(symbol) and "Binance" not in source.source_name:
+                    current_max_age = max(max_age, 60)
+                
+                result["max_age"] = current_max_age
+                
+                if symbol not in self.latest_results:
+                    self.latest_results[symbol] = {}
+                self.latest_results[symbol][source.source_name] = result
+                
+                await record_source_success(source.source_name, result.get("latency", 0))
+                return True
             else:
-                await asyncio.sleep(base_interval * self._interval_scale[source.source_name])
+                 self.aggregator.circuit_breaker.record_failure(source.source_name)
+                 await record_source_failure(source.source_name)
+                 return False
+        except Exception as e:
+            logger.error(f"Error fetching {source.source_name} {symbol}: {e}")
+            self.aggregator.circuit_breaker.record_failure(source.source_name)
+            await record_source_failure(source.source_name)
+            return False
 
     async def _aggregate_loop(self, symbols: List[str]):
         """定期聚合所有來源的數據"""
@@ -176,10 +214,9 @@ class Scheduler:
         
         tasks = []
         
-        # 為每個 symbol 和每個 source 創建輪詢任務
-        for symbol in symbols:
-            for source in self.sources:
-                tasks.append(asyncio.create_task(self._poll_source(source, symbol)))
+        # Refactored: One task per Source (Source-Centric Polling)
+        for source in self.sources:
+            tasks.append(asyncio.create_task(self._source_control_loop(source, symbols)))
         
         # 創建聚合任務
         tasks.append(asyncio.create_task(self._aggregate_loop(symbols)))

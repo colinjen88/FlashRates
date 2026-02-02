@@ -107,9 +107,31 @@ class RedisClient:
             await self.connect()
         return await self.redis.zremrangebyscore(key, min_score, max_score)
 
-    async def zcard(self, key):
+        return await self.redis.zcard(key)
+
+    async def incr(self, key):
         if not self.redis:
             await self.connect()
-        return await self.redis.zcard(key)
+        return await self.redis.incr(key)
+
+    async def expire(self, key, seconds):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.expire(key, seconds)
+
+    async def hgetall(self, key):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.hgetall(key)
+
+    async def hincrby(self, key, field, amount=1):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.hincrby(key, field, amount)
+
+    async def hset(self, key, mapping):
+        if not self.redis:
+            await self.connect()
+        return await self.redis.hset(key, mapping=mapping)
 
 redis_client = RedisClient()

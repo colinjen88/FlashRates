@@ -196,8 +196,11 @@ class Aggregator:
         await redis_client.set(f"market:latest:{symbol}", output_json)
 
         # 儲存歷史資料 (Redis sorted set)
+        # 使用 UUID 作為前綴防止重複或覆寫
+        import uuid
         history_key = f"market:history:{symbol}"
-        await redis_client.zadd(history_key, {output_json: output["timestamp"]})
+        unique_member = f"{uuid.uuid4().hex}:{output_json}"
+        await redis_client.zadd(history_key, {unique_member: output["timestamp"]})
 
         # 依時間與筆數保留歷史
         retention_hours = max(1, int(settings.HISTORY_RETENTION_HOURS))

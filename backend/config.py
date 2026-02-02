@@ -37,6 +37,17 @@ class Settings(BaseSettings):
     HISTORY_RETENTION_HOURS: int = 24
     HISTORY_MAX_POINTS: int = 10000
 
+    # Security
+    CORS_ORIGINS: str = "*"
+    MAX_UPLOAD_SIZE: int = 5 * 1024 * 1024  # 5MB
+    ALLOW_ANON_READ: bool = False
+    
+    # Supported Symbols
+    SUPPORTED_SYMBOLS: set = {
+        "XAU-USD", "XAG-USD", "USD-TWD", "PAXG-USD", "GC-F", "SI-F", 
+        "XAG-USDT", "XAU-USDT", "DXY", "US10Y", "HG-F", "CL-F", "VIX", "GDX", "SIL"
+    }
+
     class Config:
         env_file = ".env"
 
