@@ -1,4 +1,4 @@
-$VPS_HOST = "goldlab.cloud"
+$VPS_HOST = "72.62.66.151"
 $VPS_USER = "root"
 $PROJECT_DIR = "/home/docker-server/projects/goldlab-cloud"
 
