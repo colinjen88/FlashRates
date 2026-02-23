@@ -9,10 +9,20 @@ services:
     restart: always
     environment:
       - REDIS_HOST=redis
+    env_file:
+      - .env
     ports:
       - "8000:8000"
     depends_on:
       - redis
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/latest"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   frontend:
     image: nginx:alpine
@@ -30,3 +40,8 @@ services:
     image: redis:alpine
     container_name: goldlab-cloud-redis
     restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 20s
+      timeout: 5s
+      retries: 3

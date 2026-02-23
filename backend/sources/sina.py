@@ -52,6 +52,7 @@ class SinaFinanceSource(BaseSource):
                 encoding="gbk",
             )
             if status != 200:
+                logger.warning(f"Sina Finance returned status {status}")
                 return None
             
             # 解析格式: var hq_str_hf_GC="...價格數據..."
@@ -72,6 +73,7 @@ class SinaFinanceSource(BaseSource):
                         return price
                     except (ValueError, IndexError):
                         pass
+            logger.warning("Sina Finance returned unexpected payload")
             return None
         except Exception as e:
             logger.warning(f"Error fetching Sina Finance: {e}")

@@ -33,11 +33,13 @@ class GoldPriceOrgSource(BaseSource):
                 backoff=0.6,
             )
             if status != 200:
+                logger.warning(f"GoldPrice.org returned status {status}")
                 return None
             
             items = data.get("items", [])
             
             if not items:
+                logger.warning("GoldPrice.org returned empty items")
                 return None
             
             item = items[0]

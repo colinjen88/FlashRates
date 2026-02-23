@@ -16,7 +16,7 @@ class BinanceSource(BaseSource):
     
     def __init__(self):
         super().__init__("Binance", priority=1, supported_symbols={
-            "PAXG-USD", "XAG-USDT", "XAU-USDT",
+            "PAXG-USD", "XAG-USDT", "XAU-USDT", "XAU-USD", "XAG-USD",
         })
         self.weight = 0.8  # 高權重
 
@@ -28,10 +28,10 @@ class BinanceSource(BaseSource):
         if symbol == "PAXG-USD":
             target_symbol = "PAXGUSDT"
             url = self.URL
-        elif symbol == "XAG-USDT":  # Binance Silver Futures
+        elif symbol == "XAG-USDT" or symbol == "XAG-USD":  # Binance Silver Futures
             target_symbol = "XAGUSDT"
             url = self.FUTURES_URL
-        elif symbol == "XAU-USDT":  # Binance Gold Futures
+        elif symbol == "XAU-USDT" or symbol == "XAU-USD":  # Binance Gold Futures
             target_symbol = "XAUUSDT"
             url = self.FUTURES_URL
             
