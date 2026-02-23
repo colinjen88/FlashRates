@@ -120,11 +120,10 @@ const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                    activeTab === item.id
-                      ? "text-emerald-400 bg-slate-800"
-                      : "text-slate-300 hover:text-white hover:bg-slate-800"
-                  }`}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${activeTab === item.id
+                    ? "text-emerald-400 bg-slate-800"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800"
+                    }`}
                 >
                   {item.protected && <Lock className="w-3 h-3" />}
                   {item.label}
@@ -148,7 +147,7 @@ const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
       {isOpen && (
         <div className="md:hidden bg-slate-900 border-b border-slate-800">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          {navItems.map((item) => (
+            {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item)}
@@ -168,10 +167,10 @@ const Navbar = ({ activeTab, setActiveTab, isAdminLoggedIn, onAdminClick }) => {
 // --- 價差指標組件 ---
 const SpreadIndicator = ({ spotPrice, futurePrice }) => {
   if (!spotPrice || !futurePrice) return null;
-  
+
   const diff = spotPrice - futurePrice;
   const pct = (diff / spotPrice) * 100;
-  
+
   return (
     <span className="text-xs font-mono text-slate-400 bg-slate-800/50 px-2 py-1 rounded border border-slate-700 flex items-center gap-2">
       現貨與幣安合約價差：
@@ -347,15 +346,15 @@ const LogModal = ({ isOpen, onClose }) => {
       fetch('/api/v1/spread-logs?limit=100', {
         headers: { 'X-API-Key': 'dev_key' }
       })
-      .then(res => res.json())
-      .then(data => {
-        setLogs(data.logs || []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+        .then(res => res.json())
+        .then(data => {
+          setLogs(data.logs || []);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoading(false);
+        });
     }
   }, [isOpen]);
 
@@ -367,44 +366,44 @@ const LogModal = ({ isOpen, onClose }) => {
       <div className="relative bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[80vh]">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500" />
         <div className="p-6 border-b border-slate-800 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-emerald-400" />
-                現貨vs幣安合約 價差{'>'}1%
-            </h2>
-            <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
-                <X className="w-6 h-6" />
-            </button>
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <FileText className="w-5 h-5 text-emerald-400" />
+            現貨vs幣安合約 價差{'>'}1%
+          </h2>
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+            <X className="w-6 h-6" />
+          </button>
         </div>
         <div className="p-0 overflow-y-auto flex-1 bg-slate-950 font-mono text-xs sm:text-sm text-slate-300">
-            {loading ? (
-                <div className="p-8 text-center text-slate-500">載入中...</div>
-            ) : logs.length === 0 ? (
-                <div className="p-8 text-center text-slate-500">尚無超過 1% 的價差記錄</div>
-            ) : (
-                <table className="w-full text-left">
-                    <thead className="bg-slate-900 text-slate-400 sticky top-0">
-                        <tr>
-                            <th className="px-4 py-2 font-medium">記錄時間</th>
-                            <th className="px-4 py-2 font-medium">內容</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800">
-                        {logs.map((log, i) => {
-                            // Parse simple format if possible, otherwise just display
-                            // Expected: 2023-XX-XX... - Gold: Spot=...
-                            const parts = log.split(' - ');
-                            const time = parts[0] || '';
-                            const content = parts.slice(1).join(' - ') || log;
-                            return (
-                                <tr key={i} className="hover:bg-slate-900/50">
-                                    <td className="px-4 py-2 whitespace-nowrap text-slate-500">{time}</td>
-                                    <td className="px-4 py-2 text-emerald-300">{content}</td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            )}
+          {loading ? (
+            <div className="p-8 text-center text-slate-500">載入中...</div>
+          ) : logs.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">尚無超過 1% 的價差記錄</div>
+          ) : (
+            <table className="w-full text-left">
+              <thead className="bg-slate-900 text-slate-400 sticky top-0">
+                <tr>
+                  <th className="px-4 py-2 font-medium">記錄時間</th>
+                  <th className="px-4 py-2 font-medium">內容</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {logs.map((log, i) => {
+                  // Parse simple format if possible, otherwise just display
+                  // Expected: 2023-XX-XX... - Gold: Spot=...
+                  const parts = log.split(' - ');
+                  const time = parts[0] || '';
+                  const content = parts.slice(1).join(' - ') || log;
+                  return (
+                    <tr key={i} className="hover:bg-slate-900/50">
+                      <td className="px-4 py-2 whitespace-nowrap text-slate-500">{time}</td>
+                      <td className="px-4 py-2 text-emerald-300">{content}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
@@ -412,7 +411,7 @@ const LogModal = ({ isOpen, onClose }) => {
 };
 
 // 獨立的單一資產卡片組件，更新支援中文名稱
-const AssetCard = ({
+const AssetCard = React.memo(({
   name,
   symbol,
   price,
@@ -462,13 +461,12 @@ const AssetCard = ({
             <span className="text-sm font-bold text-white flex items-center gap-2">
               {name}
               <span
-                className={`text-[10px] ${
-                  hasData
-                    ? isMarketOpen === false
-                      ? "text-orange-400 bg-orange-500/10 border-orange-500/20"
-                      : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                    : "text-slate-400 bg-slate-500/10 border-slate-500/20"
-                } px-1.5 py-0.5 rounded border font-mono`}
+                className={`text-[10px] ${hasData
+                  ? isMarketOpen === false
+                    ? "text-orange-400 bg-orange-500/10 border-orange-500/20"
+                    : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                  : "text-slate-400 bg-slate-500/10 border-slate-500/20"
+                  } px-1.5 py-0.5 rounded border font-mono`}
               >
                 {hasData
                   ? isMarketOpen === false
@@ -576,15 +574,15 @@ const AssetCard = ({
       </div>
     </div>
   );
-};
+});
 
 // TradingView Widget Component (Iframe Method)
 // TradingView Widget Component (Iframe Method) - Now accepts type
-const TradingViewWidget = ({ type }) => {
+const TradingViewWidget = React.memo(({ type }) => {
   let src = "/tv-gold.html";
   if (type === "silver") src = "/tv-silver.html";
   if (type === "usdtwd") src = "/tv-usdtwd.html";
-  
+
   return (
     <div className="w-full h-[260px] bg-slate-900 ring-1 ring-slate-800 rounded-xl overflow-hidden shadow-2xl">
       <iframe
@@ -596,23 +594,47 @@ const TradingViewWidget = ({ type }) => {
       />
     </div>
   );
-};
+});
 
-const DashboardSection = () => {
+const DashboardSection = ({ adminKey }) => {
   const [marketData, setMarketData] = useState({});
   const [prevMarketData, setPrevMarketData] = useState({});
   const [isConnected, setIsConnected] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
   const marketDataRef = useRef({});
 
+  const [resolvedApiKey, setResolvedApiKey] = useState(() => {
+    return (
+      adminKey ||
+      window.localStorage.getItem("goldlab_api_key") ||
+      import.meta.env.VITE_PUBLIC_API_KEY ||
+      ""
+    );
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlKey = params.get("api_key");
+    if (urlKey) {
+      window.localStorage.setItem("goldlab_api_key", urlKey);
+    }
+    setResolvedApiKey(
+      urlKey ||
+      adminKey ||
+      window.localStorage.getItem("goldlab_api_key") ||
+      import.meta.env.VITE_PUBLIC_API_KEY ||
+      ""
+    );
+  }, [adminKey]);
+
   const supportedCounts = {
-    "XAU-USD": 10,  // 增加到 10 個來源 (新增 Gold-API, APMEX, Sina Spot)
-    "XAG-USD": 9,   // 增加到 9 個來源 (新增 Gold-API, APMEX, Sina Spot)
-    "USD-TWD": 12, // 12 個來源
+    "XAU-USD": 10,
+    "XAG-USD": 9,
+    "USD-TWD": 12,
     "GC-F": 3,
     "SI-F": 3,
-    "XAG-USDT": 1, // Binance Silver
-    "XAU-USDT": 1, // Binance Gold
+    "XAG-USDT": 1,
+    "XAU-USDT": 1,
     "DXY": 1,
     "US10Y": 1,
     "HG-F": 1,
@@ -625,42 +647,38 @@ const DashboardSection = () => {
   useEffect(() => {
     let ws;
     let reconnectTimeout;
+    let retryCount = 0; // Added for Exponential Backoff
 
     const connect = () => {
-      // 確保後端 (backend/main.py) 已啟動 (uvicorn backend.main:app --reload)
-      // 目前後端預設設定 (config.py) 允許任意 API Key，除非在 .env 設定了鎖定。
-      const apiKey = "dev_key";
-      
-      // 1. Initial Fetch (防止 WebSocket 連線前空白)
-      fetch(`/api/v1/latest?symbols=XAU-USD,XAG-USD,USD-TWD,GC-F,SI-F,XAG-USDT,XAU-USDT,DXY,US10Y,HG-F,CL-F,VIX,GDX,SIL`, {
-        headers: { 'X-API-Key': apiKey }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.data) {
-           const initialData = {};
-           Object.keys(data.data).forEach(key => {
-             initialData[key] = data.data[key];
-           });
-           setMarketData(prev => ({...prev, ...initialData}));
-           marketDataRef.current = {...marketDataRef.current, ...initialData};
-        }
-      })
-      .catch(err => console.error("Initial fetch error:", err));
+      const authHeaders = resolvedApiKey ? { 'X-API-Key': resolvedApiKey } : {};
 
-      // 自動判斷 WebSocket 網址
+      // 1. Initial Fetch
+      fetch(`/api/v1/latest?symbols=XAU-USD,XAG-USD,USD-TWD,GC-F,SI-F,XAG-USDT,XAU-USDT,DXY,US10Y,HG-F,CL-F,VIX,GDX,SIL`, {
+        headers: authHeaders
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.data) {
+            const initialData = {};
+            Object.keys(data.data).forEach(key => {
+              initialData[key] = data.data[key];
+            });
+            setMarketData(prev => ({ ...prev, ...initialData }));
+            marketDataRef.current = { ...marketDataRef.current, ...initialData };
+          }
+        })
+        .catch(err => console.error("Initial fetch error:", err));
+
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const host = window.location.host; // goldlab.cloud
-      // 如果是在 localhost 開發，可能還是連到 8000；如果在生產環境，則是 host 本身 (透過 Nginx /ws)
-      const wsUrl = window.location.hostname === "localhost" 
-        ? `ws://localhost:8000/ws/stream?api_key=${apiKey}`
-        : `${protocol}//${host}/ws/stream?api_key=${apiKey}`;
+      const apiKeyParam = resolvedApiKey ? `?api_key=${encodeURIComponent(resolvedApiKey)}` : "";
+      const wsUrl = `${protocol}//${window.location.host}/ws/stream${apiKeyParam}`;
 
       ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
         console.log("Connected to WebSocket");
         setIsConnected(true);
+        retryCount = 0; // Reset exponential backoff on success
       };
 
       ws.onmessage = (event) => {
@@ -686,7 +704,10 @@ const DashboardSection = () => {
       ws.onclose = () => {
         console.log("Disconnected");
         setIsConnected(false);
-        reconnectTimeout = setTimeout(connect, 3000);
+        // Exponential Backoff implementation (3s -> 6s -> 12s -> 24s -> max 30s)
+        const backoffMs = Math.min(3000 * Math.pow(2, retryCount), 30000);
+        retryCount++;
+        reconnectTimeout = setTimeout(connect, backoffMs);
       };
 
       ws.onerror = (err) => {
@@ -701,7 +722,7 @@ const DashboardSection = () => {
       if (ws) ws.close();
       clearTimeout(reconnectTimeout);
     };
-  }, []);
+  }, [resolvedApiKey]);
 
   return (
     <div className="pt-24 pb-8 px-4 sm:px-6 lg:px-8 max-w-[1440px] mx-auto">
@@ -733,97 +754,97 @@ const DashboardSection = () => {
       {/* 第一排：市場概覽 (TradingView + USD/FX) */}
       <div className="flex items-center justify-between mb-4 max-w-[1440px] mx-auto">
         <div className="flex items-center gap-3">
-            <h3 className="text-lg font-semibold text-slate-300 text-nowrap">市場概覽 (Overview)</h3>
-            <button 
-                onClick={() => setShowLogModal(true)}
-                className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
-            >
-                <FileText className="w-3 h-3" />
-                LOG 記錄
-            </button>
+          <h3 className="text-lg font-semibold text-slate-300 text-nowrap">市場概覽 (Overview)</h3>
+          <button
+            onClick={() => setShowLogModal(true)}
+            className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
+          >
+            <FileText className="w-3 h-3" />
+            LOG 記錄
+          </button>
         </div>
       </div>
-      
-      <div className="flex flex-col lg:flex-row gap-6 max-w-[1440px] mx-auto mb-8">
-         {/* 1. TradingView USD-TWD (Fixed 360px) */}
-         <div className="w-full lg:w-[360px] lg:shrink-0 ring-1 ring-emerald-600 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-            <TradingViewWidget type="usdtwd" />
-         </div>
 
-         {/* Remaining items distribute width */}
-         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AssetCard
-                name="美元匯率"
-                symbol="USD-TWD"
-                price={marketData["USD-TWD"]?.price}
-                prevPrice={prevMarketData["USD-TWD"]}
-                timestamp={marketData["USD-TWD"]?.timestamp}
-                source={marketData["USD-TWD"]?.details?.[0]}
-                fastest={marketData["USD-TWD"]?.fastest}
-                fastestLatency={marketData["USD-TWD"]?.fastestLatency}
-                avgLatency={marketData["USD-TWD"]?.avgLatency}
-                sourcesCount={marketData["USD-TWD"]?.sources}
-                supportedCount={supportedCounts["USD-TWD"]}
-                sources={marketData["USD-TWD"]?.details}
-                isMarketOpen={marketData["USD-TWD"]?.is_market_open}
-            />
-            <AssetCard
-                name="美元指數"
-                symbol="DXY"
-                price={marketData["DXY"]?.price}
-                prevPrice={prevMarketData["DXY"]}
-                timestamp={marketData["DXY"]?.timestamp}
-                source={marketData["DXY"]?.details?.[0]}
-                fastest={marketData["DXY"]?.fastest}
-                fastestLatency={marketData["DXY"]?.fastestLatency}
-                avgLatency={marketData["DXY"]?.avgLatency}
-                sourcesCount={marketData["DXY"]?.sources}
-                supportedCount={supportedCounts["DXY"]}
-                sources={marketData["DXY"]?.details}
-                isMarketOpen={marketData["DXY"]?.is_market_open}
-            />
-            <AssetCard
-                name="美債殖利率 (10Y)"
-                symbol="US10Y"
-                price={marketData["US10Y"]?.price}
-                prevPrice={prevMarketData["US10Y"]}
-                timestamp={marketData["US10Y"]?.timestamp}
-                source={marketData["US10Y"]?.details?.[0]}
-                fastest={marketData["US10Y"]?.fastest}
-                fastestLatency={marketData["US10Y"]?.fastestLatency}
-                avgLatency={marketData["US10Y"]?.avgLatency}
-                sourcesCount={marketData["US10Y"]?.sources}
-                supportedCount={supportedCounts["US10Y"]}
-                sources={marketData["US10Y"]?.details}
-                isMarketOpen={marketData["US10Y"]?.is_market_open}
-            />
-         </div>
+      <div className="flex flex-col lg:flex-row gap-6 max-w-[1440px] mx-auto mb-8">
+        {/* 1. TradingView USD-TWD (Fixed 360px) */}
+        <div className="w-full lg:w-[360px] lg:shrink-0 ring-1 ring-emerald-600 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+          <TradingViewWidget type="usdtwd" />
+        </div>
+
+        {/* Remaining items distribute width */}
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <AssetCard
+            name="美元匯率"
+            symbol="USD-TWD"
+            price={marketData["USD-TWD"]?.price}
+            prevPrice={prevMarketData["USD-TWD"]}
+            timestamp={marketData["USD-TWD"]?.timestamp}
+            source={marketData["USD-TWD"]?.details?.[0]}
+            fastest={marketData["USD-TWD"]?.fastest}
+            fastestLatency={marketData["USD-TWD"]?.fastestLatency}
+            avgLatency={marketData["USD-TWD"]?.avgLatency}
+            sourcesCount={marketData["USD-TWD"]?.sources}
+            supportedCount={supportedCounts["USD-TWD"]}
+            sources={marketData["USD-TWD"]?.details}
+            isMarketOpen={marketData["USD-TWD"]?.is_market_open}
+          />
+          <AssetCard
+            name="美元指數"
+            symbol="DXY"
+            price={marketData["DXY"]?.price}
+            prevPrice={prevMarketData["DXY"]}
+            timestamp={marketData["DXY"]?.timestamp}
+            source={marketData["DXY"]?.details?.[0]}
+            fastest={marketData["DXY"]?.fastest}
+            fastestLatency={marketData["DXY"]?.fastestLatency}
+            avgLatency={marketData["DXY"]?.avgLatency}
+            sourcesCount={marketData["DXY"]?.sources}
+            supportedCount={supportedCounts["DXY"]}
+            sources={marketData["DXY"]?.details}
+            isMarketOpen={marketData["DXY"]?.is_market_open}
+          />
+          <AssetCard
+            name="美債殖利率 (10Y)"
+            symbol="US10Y"
+            price={marketData["US10Y"]?.price}
+            prevPrice={prevMarketData["US10Y"]}
+            timestamp={marketData["US10Y"]?.timestamp}
+            source={marketData["US10Y"]?.details?.[0]}
+            fastest={marketData["US10Y"]?.fastest}
+            fastestLatency={marketData["US10Y"]?.fastestLatency}
+            avgLatency={marketData["US10Y"]?.avgLatency}
+            sourcesCount={marketData["US10Y"]?.sources}
+            supportedCount={supportedCounts["US10Y"]}
+            sources={marketData["US10Y"]?.details}
+            isMarketOpen={marketData["US10Y"]?.is_market_open}
+          />
+        </div>
       </div>
 
       {/* 黃金區 (Gold) */}
       <div className="flex items-center justify-between mb-4 max-w-[1440px] mx-auto">
         <div className="flex items-center gap-3">
-            <h3 className="text-lg font-semibold text-slate-300">黃金 (Gold)</h3>
-            <button 
-                onClick={() => setShowLogModal(true)}
-                className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
-            >
-                <FileText className="w-3 h-3" />
-                LOG 記錄
-            </button>
+          <h3 className="text-lg font-semibold text-slate-300">黃金 (Gold)</h3>
+          <button
+            onClick={() => setShowLogModal(true)}
+            className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
+          >
+            <FileText className="w-3 h-3" />
+            LOG 記錄
+          </button>
         </div>
-        <SpreadIndicator 
-          spotPrice={marketData["XAU-USD"]?.price} 
-          futurePrice={marketData["XAU-USDT"]?.price} 
+        <SpreadIndicator
+          spotPrice={marketData["XAU-USD"]?.price}
+          futurePrice={marketData["XAU-USDT"]?.price}
         />
       </div>
       <div className="flex flex-col lg:flex-row gap-6 max-w-[1440px] mx-auto mb-8">
         <div className="w-full lg:w-[360px] lg:shrink-0 ring-1 ring-emerald-600 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-            <TradingViewWidget type="gold" />
+          <TradingViewWidget type="gold" />
         </div>
-        
+
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AssetCard
+          <AssetCard
             name="黃金現貨"
             symbol="XAU-USD"
             price={marketData["XAU-USD"]?.price}
@@ -837,8 +858,8 @@ const DashboardSection = () => {
             supportedCount={supportedCounts["XAU-USD"]}
             sources={marketData["XAU-USD"]?.details}
             isMarketOpen={marketData["XAU-USD"]?.is_market_open}
-            />
-            <AssetCard
+          />
+          <AssetCard
             name="幣安合約 (黃金)"
             symbol="XAU-USDT"
             price={marketData["XAU-USDT"]?.price}
@@ -852,8 +873,8 @@ const DashboardSection = () => {
             supportedCount={supportedCounts["XAU-USDT"]}
             sources={marketData["XAU-USDT"]?.details}
             isMarketOpen={true}
-            />
-            <AssetCard
+          />
+          <AssetCard
             name="黃金期貨"
             symbol="GC-F"
             price={marketData["GC-F"]?.price}
@@ -867,34 +888,34 @@ const DashboardSection = () => {
             supportedCount={supportedCounts["GC-F"]}
             sources={marketData["GC-F"]?.details}
             isMarketOpen={marketData["GC-F"]?.is_market_open}
-            />
+          />
         </div>
       </div>
 
       {/* 白銀區 (Silver) */}
       <div className="flex items-center justify-between mb-4 max-w-[1440px] mx-auto">
         <div className="flex items-center gap-3">
-            <h3 className="text-lg font-semibold text-slate-300">白銀 (Silver)</h3>
-            <button 
-                onClick={() => setShowLogModal(true)}
-                className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
-            >
-                <FileText className="w-3 h-3" />
-                LOG 記錄
-            </button>
+          <h3 className="text-lg font-semibold text-slate-300">白銀 (Silver)</h3>
+          <button
+            onClick={() => setShowLogModal(true)}
+            className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
+          >
+            <FileText className="w-3 h-3" />
+            LOG 記錄
+          </button>
         </div>
-        <SpreadIndicator 
-          spotPrice={marketData["XAG-USD"]?.price} 
-          futurePrice={marketData["XAG-USDT"]?.price} 
+        <SpreadIndicator
+          spotPrice={marketData["XAG-USD"]?.price}
+          futurePrice={marketData["XAG-USDT"]?.price}
         />
       </div>
       <div className="flex flex-col lg:flex-row gap-6 max-w-[1440px] mx-auto mb-16">
         <div className="w-full lg:w-[360px] lg:shrink-0 ring-1 ring-emerald-600 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-            <TradingViewWidget type="silver" />
+          <TradingViewWidget type="silver" />
         </div>
-        
+
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AssetCard
+          <AssetCard
             name="白銀現貨"
             symbol="XAG-USD"
             price={marketData["XAG-USD"]?.price}
@@ -908,8 +929,8 @@ const DashboardSection = () => {
             supportedCount={supportedCounts["XAG-USD"]}
             sources={marketData["XAG-USD"]?.details}
             isMarketOpen={marketData["XAG-USD"]?.is_market_open}
-            />
-             <AssetCard
+          />
+          <AssetCard
             name="幣安合約 (白銀)"
             symbol="XAG-USDT"
             price={marketData["XAG-USDT"]?.price}
@@ -923,8 +944,8 @@ const DashboardSection = () => {
             supportedCount={supportedCounts["XAG-USDT"]}
             sources={marketData["XAG-USDT"]?.details}
             isMarketOpen={true}
-            />
-            <AssetCard
+          />
+          <AssetCard
             name="白銀期貨"
             symbol="SI-F"
             price={marketData["SI-F"]?.price}
@@ -938,7 +959,7 @@ const DashboardSection = () => {
             supportedCount={supportedCounts["SI-F"]}
             sources={marketData["SI-F"]?.details}
             isMarketOpen={marketData["SI-F"]?.is_market_open}
-            />
+          />
         </div>
       </div>
 
@@ -980,9 +1001,9 @@ const CoreTechSection = () => (
         {/* Left: Professional Visual Diagram */}
         <div className="relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-1000"></div>
-          <img 
-            src="/flow_diagram.png" 
-            alt="Goldlab.cloud System Architecture" 
+          <img
+            src="/flow_diagram.png"
+            alt="Goldlab.cloud System Architecture"
             className="relative rounded-xl border border-slate-700 w-full shadow-2xl"
           />
         </div>
@@ -1164,11 +1185,10 @@ const CodeBlock = () => {
             <button
               key={l}
               onClick={() => setLang(l)}
-              className={`px-3 py-1 rounded text-xs font-medium transition-all ${
-                lang === l
-                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20"
-                  : "text-slate-400 hover:text-white"
-              }`}
+              className={`px-3 py-1 rounded text-xs font-medium transition-all ${lang === l
+                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20"
+                : "text-slate-400 hover:text-white"
+                }`}
             >
               {l.toUpperCase()}
             </button>
@@ -1530,14 +1550,14 @@ API_KEYS=gl_xxx,gl_yyy,gl_zzz`}
             </div>
 
             <div id="endpoint-ws" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">
-            <h2 className="text-xl font-bold text-white mb-4">
-              WebSocket 即時推送
-            </h2>
-            <p className="text-slate-400 mb-4">
-              連線後會訂閱所有資產頻道，伺服器會推送各資產的最新聚合結果，包含 is_market_open 欄位。
-            </p>
-            <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto">
-              {`ws://localhost:8000/ws/stream?api_key=YOUR_API_KEY
+              <h2 className="text-xl font-bold text-white mb-4">
+                WebSocket 即時推送
+              </h2>
+              <p className="text-slate-400 mb-4">
+                連線後會訂閱所有資產頻道，伺服器會推送各資產的最新聚合結果，包含 is_market_open 欄位。
+              </p>
+              <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto">
+                {`ws://localhost:8000/ws/stream?api_key=YOUR_API_KEY
 
 // 伺服器推送範例
 {
@@ -1550,49 +1570,49 @@ API_KEYS=gl_xxx,gl_yyy,gl_zzz`}
   "fastestLatency": 42.3,
   "avgLatency": 88.4
 }`}
-            </pre>
-          </div>
+              </pre>
+            </div>
 
-          <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12">
-            <h2 className="text-xl font-bold text-white mb-4">管理端 API</h2>
-            <ul className="text-sm text-slate-400 space-y-2">
-              <li>
-                <span className="font-mono text-slate-200">
-                  GET /api/v1/admin/keys
-                </span>{" "}
-                列出 key 狀態
-              </li>
-              <li>
-                <span className="font-mono text-slate-200">
-                  POST /api/v1/admin/keys/add
-                </span>{" "}
-                新增 Redis key
-              </li>
-              <li>
-                <span className="font-mono text-slate-200">
-                  POST /api/v1/admin/keys/remove
-                </span>{" "}
-                移除 Redis key
-              </li>
-              <li>
-                <span className="font-mono text-slate-200">
-                  POST /api/v1/admin/keys/disable
-                </span>{" "}
-                停用 key
-              </li>
-              <li>
-                <span className="font-mono text-slate-200">
-                  POST /api/v1/admin/keys/enable
-                </span>{" "}
-                啟用 key
-              </li>
-            </ul>
+            <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12">
+              <h2 className="text-xl font-bold text-white mb-4">管理端 API</h2>
+              <ul className="text-sm text-slate-400 space-y-2">
+                <li>
+                  <span className="font-mono text-slate-200">
+                    GET /api/v1/admin/keys
+                  </span>{" "}
+                  列出 key 狀態
+                </li>
+                <li>
+                  <span className="font-mono text-slate-200">
+                    POST /api/v1/admin/keys/add
+                  </span>{" "}
+                  新增 Redis key
+                </li>
+                <li>
+                  <span className="font-mono text-slate-200">
+                    POST /api/v1/admin/keys/remove
+                  </span>{" "}
+                  移除 Redis key
+                </li>
+                <li>
+                  <span className="font-mono text-slate-200">
+                    POST /api/v1/admin/keys/disable
+                  </span>{" "}
+                  停用 key
+                </li>
+                <li>
+                  <span className="font-mono text-slate-200">
+                    POST /api/v1/admin/keys/enable
+                  </span>{" "}
+                  啟用 key
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 };
 
 const AdminSection = () => {
