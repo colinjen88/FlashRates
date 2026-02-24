@@ -4,6 +4,7 @@ redis
 aiohttp
 beautifulsoup4
 playwright
+playwright-stealth
 requests
 pydantic-settings
 python-dotenv

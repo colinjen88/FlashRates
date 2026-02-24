@@ -1,4 +1,4 @@
-# Goldlab.cloud - 高頻匯率數據聚合系統 v2.9
+# Goldlab.cloud - 高頻匯率數據聚合系統 v3.2
 
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)]()
@@ -494,6 +494,7 @@ python -m pytest tests/test_system.py -v
 
 | 版本 | 日期       | 說明                  |
 | ---- | ---------- | --------------------- |
+| v3.2 | 2026-02-24 | 修復 RedisClient 語法錯誤與 zcard 缺失；增強聚合引擎魯棒性 (try-except)；補齊 playwright-stealth 依賴；修正 Docker 健康檢查。 |
 | v3.1 | 2026-02-24 | 修復 API 無限重定向迴圈 (ERR_TOO_MANY_REDIRECTS)；優化 WebSocket 的 HTTPS 代理配置；擴充公有路徑支援 (Slashed URL support)。 |
 | v3.0 | 2026-01-24 | 介面重新設計 (Flex Layout)；移除 PAXG 卡片；新增 TradingView USD-TWD 走勢圖；新增「現貨vs幣安合約」價差監控 Log 系統；優化部署腳本。 |
 | v2.9 | 2026-01-21 | 新增市場時間判斷 (`is_market_open`)：每日休市 (17:00-18:00 ET)、週末休市、美國假日休市 (MLK Day, 感恩節等)；支援夏/冬令時間自動切換 |
