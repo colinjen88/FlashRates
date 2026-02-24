@@ -494,6 +494,7 @@ python -m pytest tests/test_system.py -v
 
 | 版本 | 日期       | 說明                  |
 | ---- | ---------- | --------------------- |
+| v3.1 | 2026-02-24 | 修復 API 無限重定向迴圈 (ERR_TOO_MANY_REDIRECTS)；優化 WebSocket 的 HTTPS 代理配置；擴充公有路徑支援 (Slashed URL support)。 |
 | v3.0 | 2026-01-24 | 介面重新設計 (Flex Layout)；移除 PAXG 卡片；新增 TradingView USD-TWD 走勢圖；新增「現貨vs幣安合約」價差監控 Log 系統；優化部署腳本。 |
 | v2.9 | 2026-01-21 | 新增市場時間判斷 (`is_market_open`)：每日休市 (17:00-18:00 ET)、週末休市、美國假日休市 (MLK Day, 感恩節等)；支援夏/冬令時間自動切換 |
 | v2.8 | 2026-01-20 | 新增相關指標 (DXY, US10Y, 銅, 原油, VIX, GDX, SIL)；新增 Yahoo Finance 來源；新增「相關指標」區塊與連動關係表；Footer 版權與寬度調整 |

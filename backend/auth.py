@@ -10,7 +10,13 @@ settings = get_settings()
 
 # In-memory rate state removed in favor of Redis
 
-PUBLIC_READ_PATHS = {"/api/v1/latest", "/api/v1/history", "/ws/stream"}
+PUBLIC_READ_PATHS = {
+    "/api/v1/latest", "/api/v1/latest/",
+    "/api/v1/history", "/api/v1/history/",
+    "/api/v1/metrics", "/api/v1/metrics/",
+    "/api/v1/spread-logs", "/api/v1/spread-logs/",
+    "/ws/stream", "/ws/stream/"
+}
 
 
 def _parse_allowed_keys() -> Set[str]:
