@@ -6,12 +6,14 @@ Write-Host "🚀 Starting Docker Deployment to $VPS_HOST..." -ForegroundColor Cy
 
 # 1. Upload Backend
 Write-Host "📦 Uploading Backend..."
-scp -r backend/* "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/backend/"
-scp requirements.txt "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/backend/"
+# Use directory copy instead of globbing to avoid Windows scp issues
+scp -r backend "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/"
 
 # 2. Upload Frontend Dist
 Write-Host "📦 Uploading Frontend..."
-scp -r frontend/dist/* "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/frontend/dist/"
+# Ensure frontend directory exists before uploading dist
+ssh "${VPS_USER}@${VPS_HOST}" "mkdir -p ${PROJECT_DIR}/frontend"
+scp -r frontend/dist "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/frontend/"
 
 # 3. Upload Docker Configs
 Write-Host "📦 Uploading Configuration..."
@@ -20,6 +22,6 @@ scp -r docker "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/"
 
 # 4. Restart Services
 Write-Host "🔄 Restarting Services..."
-ssh "${VPS_USER}@${VPS_HOST}" "cd ${PROJECT_DIR} && docker-compose down && docker-compose up -d --build"
+ssh "${VPS_USER}@${VPS_HOST}" "cd ${PROJECT_DIR} && docker-compose down --remove-orphans && docker rm -f goldlab-cloud-redis goldlab-cloud-backend goldlab-cloud-frontend 2>/dev/null || true && docker-compose up -d --build"
 
 Write-Host "✅ Deployment Complete! Check logs with: ssh ${VPS_USER}@${VPS_HOST} 'cd ${PROJECT_DIR} && docker-compose logs -f'" -ForegroundColor Green
