@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  caddy:
+    image: lucaslorentz/caddy-docker-proxy:latest
+    container_name: caddy-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CADDY_INGRESS_NETWORKS=web-proxy
+    networks:
+      - web-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - caddy_data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  gateway:
+    build: .
+    container_name: vps-gateway
+    networks:
+      - web-proxy
+    ports:
+      - "8888:8888"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - NODE_ENV=production
+    labels:
+      # 群組一：原始的 my8020.cloud
+      caddy: my8020.cloud
+      caddy.0_redir_0: /jen /jen/
+      caddy.0_redir_1: /jendb /jendb/
+      caddy.1_handle_path: /jen/*
+      caddy.1_handle_path.reverse_proxy: "{{upstreams 8888}}"
+      caddy.1_handle_path.reverse_proxy.header_up: "X-Forwarded-Proto https"
+      caddy.2_handle_path: /jendb/*
+      caddy.2_handle_path.reverse_proxy: "{{upstreams 8888}}"
+      caddy.2_handle_path.reverse_proxy.header_up: "X-Forwarded-Proto https"
+      caddy.3_handle: /*
+      caddy.3_handle.reverse_proxy: "host.docker.internal:4500"
+      caddy.3_handle.reverse_proxy.header_up: "X-Forwarded-Proto https"
+
+      # 群組二：book.gowork.run (Docker Container)
+      caddy_1: book.gowork.run:80
+      caddy_1.reverse_proxy: "book-gowork-app:3000"
+      caddy_1.reverse_proxy.header_up: "X-Forwarded-Proto https"
+
+      # 群組三：seo.gowork.run (PM2 on Port 3003)
+      caddy_2: seo.gowork.run:80
+      caddy_2.reverse_proxy: "host.docker.internal:3003"
+      caddy_2.reverse_proxy.header_up: "X-Forwarded-Proto https"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          memory: 256M
+
+networks:
+  web-proxy:
+    name: web-proxy
+    external: true
+
+volumes:
+  caddy_data:
