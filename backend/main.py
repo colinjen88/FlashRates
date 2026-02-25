@@ -142,6 +142,8 @@ async def shutdown_event():
     logger.info("Application shutdown")
 
 @app.get("/")
+@app.get("/api")
+@app.get("/api/")
 async def root():
     return {"status": "ok", "version": "3.2.1", "app": settings.APP_NAME, "sources": 15}
 
@@ -157,7 +159,7 @@ async def get_latest(request: Request, symbols: str = "xau-usd,xag-usd,usd-twd,p
         data = await redis_client.get(f"market:latest:{symbol}")
         if data:
             result[symbol] = json.loads(data)
-    return {"timestamp": __import__('time').time(), "data": result, "request_id": request.state.request_id}
+    return {"version": "3.2.1", "timestamp": __import__('time').time(), "data": result, "request_id": request.state.request_id}
 
 
 @app.get("/api/v1/history")

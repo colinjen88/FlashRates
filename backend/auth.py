@@ -11,6 +11,7 @@ settings = get_settings()
 # In-memory rate state removed in favor of Redis
 
 PUBLIC_READ_PATHS = {
+    "/", "/api", "/api/",
     "/api/v1/latest", "/api/v1/latest/",
     "/api/v1/history", "/api/v1/history/",
     "/api/v1/metrics", "/api/v1/metrics/",
