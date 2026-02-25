@@ -143,7 +143,7 @@ async def shutdown_event():
 
 @app.get("/")
 async def root():
-    return {"status": "ok", "app": settings.APP_NAME, "sources": 15}
+    return {"status": "ok", "version": "3.2.1", "app": settings.APP_NAME, "sources": 15}
 
 @app.get("/api/v1/latest")
 async def get_latest(request: Request, symbols: str = "xau-usd,xag-usd,usd-twd,paxg-usd,gc-f,si-f,xag-usdt", api_key: str = Depends(verify_api_key)):
