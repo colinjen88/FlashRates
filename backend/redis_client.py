@@ -106,7 +106,9 @@ class RedisClient:
         if not self.redis:
             await self.connect()
         return await self.redis.zremrangebyscore(key, min_score, max_score)
-
+    async def zcard(self, key):
+        if not self.redis:
+            await self.connect()
         return await self.redis.zcard(key)
 
     async def incr(self, key):
