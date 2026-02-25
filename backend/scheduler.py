@@ -154,7 +154,10 @@ class Scheduler:
                 if symbol in self.latest_results:
                     results = list(self.latest_results[symbol].values())
                     if results:
-                        await self.aggregator.aggregate(symbol, results)
+                        try:
+                            await self.aggregator.aggregate(symbol, results)
+                        except Exception as e:
+                            logger.error(f"Error aggregating {symbol}: {e}", exc_info=True)
             
             await asyncio.sleep(1)  # 每秒聚合一次
 

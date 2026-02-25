@@ -7,7 +7,7 @@ import sys
 HOST = "72.62.66.151"
 USER = "root"
 PASS = "@Qqww12121212"
-REMOTE_DIR = "/home/docker-server/projects/flash-rates"
+REMOTE_DIR = "/home/docker-server/projects/goldlab-cloud"
 
 def create_remote_dir(sftp, remote_path):
     """Recursively create remote directory."""

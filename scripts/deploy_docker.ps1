@@ -1,25 +1,22 @@
-$VPS_HOST = "goldlab.cloud"
+$VPS_HOST = "72.62.66.151"
 $VPS_USER = "root"
 $PROJECT_DIR = "/home/docker-server/projects/goldlab-cloud"
 
 Write-Host "🚀 Starting Docker Deployment to $VPS_HOST..." -ForegroundColor Cyan
 
-# 0. Initialize Remote Directories
-Write-Host "📂 Ensuring remote directories exist..."
-ssh "${VPS_USER}@${VPS_HOST}" "mkdir -p ${PROJECT_DIR}/backend ${PROJECT_DIR}/frontend/dist ${PROJECT_DIR}/docker"
-
 # 1. Upload Backend
 Write-Host "📦 Uploading Backend..."
-scp -r backend/* "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/backend/"
-scp backend/requirements.txt "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/backend/"
+# Use directory copy instead of globbing to avoid Windows scp issues
+scp -r backend "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/"
 
 # 2. Upload Frontend Dist
 Write-Host "📦 Uploading Frontend..."
-scp -r frontend/dist/* "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/frontend/dist/"
+# Ensure frontend directory exists before uploading dist
+ssh "${VPS_USER}@${VPS_HOST}" "mkdir -p ${PROJECT_DIR}/frontend"
+scp -r frontend/dist "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/frontend/"
 
 # 3. Upload Docker Configs
 Write-Host "📦 Uploading Configuration..."
-scp .env "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/"
 scp docker-compose.yml "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/"
 scp -r docker "${VPS_USER}@${VPS_HOST}:${PROJECT_DIR}/"
 
