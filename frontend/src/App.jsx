@@ -755,13 +755,24 @@ const DashboardSection = ({ adminKey }) => {
       <div className="flex items-center justify-between mb-4 max-w-[1440px] mx-auto">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-slate-300 text-nowrap">市場概覽 (Overview)</h3>
-          <button
-            onClick={() => setShowLogModal(true)}
-            className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
-          >
-            <FileText className="w-3 h-3" />
-            LOG 記錄
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowLogModal(true)}
+              className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
+            >
+              <FileText className="w-3 h-3" />
+              價差記錄
+            </button>
+            <a
+              href={`/api/v1/error-logs?limit=200${resolvedApiKey ? `&api_key=${resolvedApiKey}` : ""}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] bg-slate-800 hover:bg-slate-700 text-rose-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
+            >
+              <AlertTriangle className="w-3 h-3" />
+              錯誤 API
+            </a>
+          </div>
         </div>
       </div>
 
@@ -1280,6 +1291,12 @@ const DocsSection = () => {
                   GET /api/v1/metrics
                 </li>
                 <li
+                  onClick={() => scrollToSection("endpoint-error-logs")}
+                  className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors"
+                >
+                  GET /api/v1/error-logs
+                </li>
+                <li
                   onClick={() => scrollToSection("endpoint-ws")}
                   className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors"
                 >
@@ -1544,9 +1561,37 @@ API_KEYS=gl_xxx,gl_yyy,gl_zzz`}
   },
   "aggregates": {
     "XAU-USD": {"count": 320, "avgLatencyMs": 88.4, "lastSources": 8}
-  }
-}`}
+}
+}
+`}
               </pre>
+            </div>
+
+            <div id="endpoint-error-logs" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <AlertTriangle className="text-rose-400 w-5 h-5" />
+                爬蟲錯誤日誌 (Error Logs)
+              </h2>
+              <p className="text-slate-400 mb-4">
+                取得最近的爬蟲與連線錯誤詳細記錄 (含程式碼層級的 Traceback)。方便用於遠端 Debug 排錯。
+              </p>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded text-sm font-bold border border-emerald-500/20">
+                  GET
+                </span>
+                <code className="text-slate-200 bg-slate-800 px-2 py-1 rounded">
+                  /api/v1/error-logs?limit=200
+                </code>
+              </div>
+              <h4 className="font-bold text-white mt-6 mb-2">
+                查詢參數 (Query Parameters)
+              </h4>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li>
+                  <span className="text-slate-200 font-mono">limit</span> (可選):
+                  日誌獲取行數限制 (預設為 200)。
+                </li>
+              </ul>
             </div>
 
             <div id="endpoint-ws" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">

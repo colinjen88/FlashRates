@@ -8,8 +8,19 @@ from backend.market_hours import is_market_open
 from backend.redis_client import redis_client
 import os
 import json
+import traceback
 
 logger = logging.getLogger(__name__)
+
+# Setup specific error logger for fetch failures
+os.makedirs("logs", exist_ok=True)
+fetch_error_logger = logging.getLogger("fetch_error_logger")
+fetch_error_logger.setLevel(logging.ERROR)
+if not fetch_error_logger.handlers:
+    err_handler = logging.FileHandler("logs/fetch_errors.log", encoding='utf-8')
+    err_formatter = logging.Formatter('%(asctime)s - [%(levelname)s] - %(message)s')
+    err_handler.setFormatter(err_formatter)
+    fetch_error_logger.addHandler(err_handler)
 
 # 數據源配置 - 頻率設定依據各來源的 Rate Limit 政策
 # 
@@ -142,6 +153,8 @@ class Scheduler:
                  await record_source_failure(source.source_name)
                  return False
         except Exception as e:
+            error_msg = f"Source: {source.source_name} | Symbol: {symbol} | Error: {e}\n{traceback.format_exc()}"
+            fetch_error_logger.error(error_msg)
             logger.error(f"Error fetching {source.source_name} {symbol}: {e}")
             self.aggregator.circuit_breaker.record_failure(source.source_name)
             await record_source_failure(source.source_name)

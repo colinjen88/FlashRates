@@ -494,6 +494,7 @@ python -m pytest tests/test_system.py -v
 
 | 版本 | 日期       | 說明                  |
 | ---- | ---------- | --------------------- |
+| v3.3 | 2026-02-25 | 獨立寫入爬蟲錯誤日誌 (fetch_errors.log)；新增 `/api/v1/error-logs` API 端點與前端追蹤捷徑。 |
 | v3.2 | 2026-02-24 | 修復 RedisClient 語法錯誤與 zcard 缺失；增強聚合引擎魯棒性 (try-except)；補齊 playwright-stealth 依賴；修正 Docker 健康檢查。 |
 | v3.1 | 2026-02-24 | 修復 API 無限重定向迴圈 (ERR_TOO_MANY_REDIRECTS)；優化 WebSocket 的 HTTPS 代理配置；擴充公有路徑支援 (Slashed URL support)。 |
 | v3.0 | 2026-01-24 | 介面重新設計 (Flex Layout)；移除 PAXG 卡片；新增 TradingView USD-TWD 走勢圖；新增「現貨vs幣安合約」價差監控 Log 系統；優化部署腳本。 |

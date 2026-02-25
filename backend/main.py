@@ -237,6 +237,24 @@ async def get_spread_logs(limit: int = 100, api_key: str = Depends(verify_api_ke
         return {"logs": [], "error": str(e)}
 
 
+@app.get("/api/v1/error-logs")
+async def get_error_logs(limit: int = 200, api_key: str = Depends(verify_api_key)):
+    """獲取爬蟲錯誤記錄"""
+    import os
+    log_file = "logs/fetch_errors.log"
+    if not os.path.exists(log_file):
+        return {"logs": []}
+    
+    try:
+        with open(log_file, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            # 錯誤日誌可能會有多行 traceback，回傳最後 N 行
+            return {"logs": [line.rstrip('\n') for line in reversed(lines[-limit:])]}
+    except Exception as e:
+        logger.error(f"Error reading error logs: {e}")
+        return {"logs": [], "error": str(e)}
+
+
 class AdminKeyPayload(BaseModel):
     key: str
 
