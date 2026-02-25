@@ -1,6 +1,7 @@
 import redis.asyncio as redis
 from backend.config import get_settings
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -13,29 +14,49 @@ class RedisClient:
             cls._instance = super().__new__(cls)
             cls._instance.redis = None
             cls._instance.use_fake = False
+            cls._instance._reconnect_lock = None
         return cls._instance
     
     async def connect(self):
+        if not self._reconnect_lock:
+            self._reconnect_lock = asyncio.Lock()
         if not self.redis:
-            try:
-                # 嘗試連接真實 Redis
-                self.redis = await redis.from_url(
-                    f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
-                    db=settings.REDIS_DB,
-                    password=settings.REDIS_PASSWORD or None,
-                    encoding="utf-8",
-                    decode_responses=True
-                )
-                # 測試連線
-                await self.redis.ping()
-                logger.info("Connected to Redis")
-            except Exception as e:
-                logger.warning(f"Redis connection failed: {e}, using FakeRedis")
-                # 使用 FakeRedis 作為備選
-                import fakeredis.aioredis
-                self.redis = fakeredis.aioredis.FakeRedis(decode_responses=True)
-                self.use_fake = True
-                logger.info("Connected to FakeRedis (in-memory)")
+            async with self._reconnect_lock:
+                if self.redis:
+                    return  # another coroutine already reconnected
+                try:
+                    # 嘗試連接真實 Redis
+                    self.redis = await redis.from_url(
+                        f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
+                        db=settings.REDIS_DB,
+                        password=settings.REDIS_PASSWORD or None,
+                        encoding="utf-8",
+                        decode_responses=True,
+                        socket_timeout=5,
+                        socket_connect_timeout=5,
+                        retry_on_timeout=True,
+                    )
+                    # 測試連線
+                    await self.redis.ping()
+                    logger.info("Connected to Redis")
+                except Exception as e:
+                    logger.warning(f"Redis connection failed: {e}, using FakeRedis")
+                    # 使用 FakeRedis 作為備選
+                    import fakeredis.aioredis
+                    self.redis = fakeredis.aioredis.FakeRedis(decode_responses=True)
+                    self.use_fake = True
+                    logger.info("Connected to FakeRedis (in-memory)")
+
+    async def _reconnect(self):
+        """Force reconnect on connection errors"""
+        logger.warning("Redis connection lost, attempting reconnect...")
+        try:
+            if self.redis and not self.use_fake:
+                await self.redis.close()
+        except Exception:
+            pass
+        self.redis = None
+        await self.connect()
     
     async def close(self):
         if self.redis and not self.use_fake:

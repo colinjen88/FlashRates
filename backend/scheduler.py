@@ -150,16 +150,19 @@ class Scheduler:
     async def _aggregate_loop(self, symbols: List[str]):
         """定期聚合所有來源的數據"""
         while self.running:
-            for symbol in symbols:
-                if symbol in self.latest_results:
-                    results = list(self.latest_results[symbol].values())
-                    if results:
-                        try:
-                            await self.aggregator.aggregate(symbol, results)
-                        except Exception as e:
-                            logger.error(f"Error aggregating {symbol}: {e}", exc_info=True)
+            try:
+                for symbol in symbols:
+                    if symbol in self.latest_results:
+                        results = list(self.latest_results[symbol].values())
+                        if results:
+                            try:
+                                await self.aggregator.aggregate(symbol, results)
+                            except Exception as e:
+                                logger.error(f"Error aggregating {symbol}: {e}", exc_info=True)
+            except Exception as e:
+                logger.error(f"Unexpected error in aggregate loop: {e}", exc_info=True)
             
-            await asyncio.sleep(1)  # 每秒聚合一次
+            await asyncio.sleep(3)  # 每 3 秒聚合一次 (降低 Redis 壓力)
 
     async def _log_spread_loop(self):
         """每分鐘記錄現貨與合約價差"""

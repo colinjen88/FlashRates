@@ -92,6 +92,17 @@ class InvestingSource(BaseSource):
         if not target_url:
             return None
             
+        try:
+            # Hard timeout on the entire fetch including lock wait
+            return await asyncio.wait_for(self._fetch_price_inner(symbol, target_url), timeout=30.0)
+        except asyncio.TimeoutError:
+            logger.warning(f"Investing.com total timeout for {symbol} (>30s)")
+            return None
+        except Exception as e:
+            logger.warning(f"Investing.com outer error for {symbol}: {e}")
+            return None
+
+    async def _fetch_price_inner(self, symbol: str, target_url: str) -> Optional[float]:
         async with self._lock:
             try:
                 await self._ensure_browser()
@@ -100,16 +111,16 @@ class InvestingSource(BaseSource):
                     return None
                 
                 # 添加隨機延遲模擬人類行為
-                await asyncio.sleep(random.uniform(1, 3))
+                await asyncio.sleep(random.uniform(0.5, 1.5))
                 
-                await self.page.goto(target_url, timeout=30000, wait_until="domcontentloaded")
+                await self.page.goto(target_url, timeout=15000, wait_until="domcontentloaded")
                 
                 # 等待價格元素出現
-                await self.page.wait_for_selector('[data-test="instrument-price-last"]', timeout=10000)
+                await self.page.wait_for_selector('[data-test="instrument-price-last"]', timeout=8000)
                 
                 # 提取價格
                 price_element = self.page.locator('[data-test="instrument-price-last"]')
-                price_text = await price_element.inner_text(timeout=5000)
+                price_text = await price_element.inner_text(timeout=3000)
                 
                 # 清理價格文字
                 price_text = price_text.replace(',', '').strip()

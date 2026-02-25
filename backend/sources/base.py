@@ -1,6 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Dict
+import asyncio
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 class BaseSource(ABC):
     def __init__(self, source_name: str, priority: int = 1, supported_symbols=None):
@@ -35,7 +39,16 @@ class BaseSource(ABC):
             return None
 
         start_time = time.time()
-        price = await self.fetch_price(symbol)
+        try:
+            price = await asyncio.wait_for(self.fetch_price(symbol), timeout=15.0)
+        except asyncio.TimeoutError:
+            logger.warning(f"{self.source_name} timed out fetching {symbol} (>15s)")
+            self.error_count += 1
+            return None
+        except Exception as e:
+            logger.warning(f"{self.source_name} unexpected error fetching {symbol}: {e}")
+            self.error_count += 1
+            return None
         latency = (time.time() - start_time) * 1000 # ms
 
         if price is None:

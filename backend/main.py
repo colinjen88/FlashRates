@@ -383,16 +383,34 @@ async def websocket_endpoint(websocket: WebSocket):
         "market:stream:SIL"
     )
     
+    last_ping = asyncio.get_event_loop().time()
     try:
         while True:
-            message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=10.0)
+            message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
             if message:
-                await websocket.send_text(message['data'])
-            else:
-                # Keep-alive or just yield
-                await asyncio.sleep(0.01)
+                try:
+                    await websocket.send_text(message['data'])
+                except Exception:
+                    break
+            
+            # Send WebSocket ping every 30 seconds to keep connection alive
+            now = asyncio.get_event_loop().time()
+            if now - last_ping > 30:
+                try:
+                    await websocket.send_text('{"type":"ping"}')
+                    last_ping = now
+                except Exception:
+                    break
+            
+            await asyncio.sleep(0.01)
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:
-        await pubsub.unsubscribe()
-        await websocket.close()
+        try:
+            await pubsub.unsubscribe()
+        except Exception:
+            pass
+        try:
+            await websocket.close()
+        except Exception:
+            pass
