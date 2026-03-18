@@ -57,16 +57,9 @@ async def get_metrics_snapshot() -> Dict[str, Any]:
     
     # 2. Sources
     sources_stats = {}
-    # We need to scan/keys or maintain a set of known sources. 
-    # For efficiency, we assume a fixed set of sources or discover them.
-    # A cleaner way is "keys metrics:sources:*" but scan is better.
-    # Alternatively, maintain a set "metrics:known_sources"
-    
-    # Let's try to infer from keys or (better) Use a helper to track names?
-    # For now, let's use keys pattern matching which is okay for <100 sources.
+    # Use SCAN instead of KEYS to avoid O(N) blocking on Redis
     if redis_client.redis:
-        keys = await redis_client.redis.keys("metrics:sources:*")
-        for k in keys:
+        async for k in redis_client.redis.scan_iter("metrics:sources:*"):
             name = k.split(":")[-1]
             data = await redis_client.hgetall(k)
             success = int(data.get("success", 0))
@@ -78,12 +71,11 @@ async def get_metrics_snapshot() -> Dict[str, Any]:
                 "failure": failure,
                 "avgLatencyMs": avg_lat
             }
-            
+
     # 3. Aggregates
     aggs_stats = {}
     if redis_client.redis:
-        keys = await redis_client.redis.keys("metrics:aggregates:*")
-        for k in keys:
+        async for k in redis_client.redis.scan_iter("metrics:aggregates:*"):
             symbol = k.split(":")[-1]
             data = await redis_client.hgetall(k)
             count = int(data.get("count", 0))

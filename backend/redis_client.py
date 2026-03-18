@@ -35,6 +35,7 @@ class RedisClient:
                         socket_timeout=5,
                         socket_connect_timeout=5,
                         retry_on_timeout=True,
+                        max_connections=30,  # 15 sources + aggregator + metrics + buffer
                     )
                     # 測試連線
                     await self.redis.ping()

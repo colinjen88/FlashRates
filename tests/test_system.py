@@ -39,23 +39,21 @@ async def test_aggregator_logic():
     with patch("backend.aggregator.redis_client") as mock_redis:
         mock_redis.publish = AsyncMock()
         mock_redis.set = AsyncMock()
-        
-        output = await agg.aggregate("TEST", results)
-        
-        # Median is 100.75? No, sorted: 100, 100.5, 101, 1000.
-        # Median of [100, 100.5, 101, 1000] is 100.75
-        # 100 is > 0.3% away from 100.75 (0.75/100.75 = 0.7%), so filtered out.
-        # Filtered: [100.5, 101.0] -> Mean is 100.75
-        
-        assert output is not None
-        assert output["price"] == 100.75
+        mock_redis.zadd = AsyncMock()
+        mock_redis.zremrangebyscore = AsyncMock()
+        mock_redis.zcard = AsyncMock(return_value=1)
+        mock_redis.zremrangebyrank = AsyncMock()
 
-        # Logic says: "sources": len(valid_prices) which is BEFORE filtering?
-        # looking at aggregator.py:
-        # valid_prices.append(price)
-        # sources_used.append(src_name)
-        # ...
-        # "sources": len(valid_prices)
-        # Yes, it reports total valid responses, not filtered ones.
-        # So sources should be 4.
+        output = await agg.aggregate("TEST", results)
+
+        # MAD filter: sorted prices = [100, 100.5, 101, 1000]
+        # median = 100.75, deviations = [0.75, 0.25, 0.25, 899.25]
+        # MAD = 0.5, threshold = min(max(1.5, 0.05), 1.0075) = 1.0075
+        # 1000.0 filtered (899.25 > 1.0075), rest pass
+        # Filtered: [100.0, 100.5, 101.0] -> equal weight average = 100.5
+
+        assert output is not None
+        assert output["price"] == 100.5
+
+        # "sources" = len(fresh_entries) = 4 (all 4 pass freshness, no max_age set)
         assert output["sources"] == 4

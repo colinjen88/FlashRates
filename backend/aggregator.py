@@ -2,6 +2,7 @@ import statistics
 import json
 import math
 import time
+import uuid
 from typing import List, Dict, Optional
 from backend.sources.base import BaseSource
 from backend.circuit_breaker import CircuitBreaker
@@ -197,7 +198,6 @@ class Aggregator:
 
         # 儲存歷史資料 (Redis sorted set)
         # 使用 UUID 作為前綴防止重複或覆寫
-        import uuid
         history_key = f"market:history:{symbol}"
         unique_member = f"{uuid.uuid4().hex}:{output_json}"
         await redis_client.zadd(history_key, {unique_member: output["timestamp"]})

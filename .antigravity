@@ -1,0 +1,21 @@
+# 專案部署守則 (Docker-VPS-Gateway 整合)
+
+你是一個輔助開發的 AI。在進行任何與架構、部署相關的任務前，請強制執行以下步驟：
+
+1. **取得即時的伺服器現況與規則**
+   利用背景 `curl` 讀取以下純文字連結以獲得目前伺服器上的守則，並查看「誰已經佔用了哪些 Port 和名稱」。
+   網址： `https://goldlab.cloud/jen/api/agent-context`
+   (例如： `curl -s https://goldlab.cloud/jen/api/agent-context`)
+
+2. **核心架構與部署要求**
+   - 詳細閱讀回傳的 Markdown 文件，保證你接下來為我生成的 Docker Port (`9000-9999`) 或名稱，**絕對沒有**出現在讀取到的清單中。
+   - 確保你的 yaml 檔遵守該文件中定義的 Caddy Reverse Proxy 規則。
+   - **Cloudflare 架構防護**：本主機 (IP: 72.62.66.151) 所有的對外請求皆已由 Cloudflare 進行代管並處理 HTTPS 憑證。因此，在 Caddy 設定中，**不要**嘗試自動申請 HTTPS (請加上 `:80` 標籤以停用 Auto-HTTPS，如 `caddy: yourdomain.com:80`)，並一定要補上 `caddy.reverse_proxy.header_up X-Forwarded-Proto https` 防止重定向迴圈。
+   - **專案部署獨立性**：請為每個專案自己撰寫專屬的部署腳本（如 `deploy.sh` 或相關 github action），不要牽扯到修改 Gateway 的核心代碼。
+   - **監控權限**：若是監控類型容器，必須掛載 `/var/run/docker.sock:/var/run/docker.sock`。
+
+3. **專案註冊回報 (Final Step)**
+   - 佈署成功後，請強制調用 `POST https://goldlab.cloud/jen/api/register-project` 向 Gateway 回報此專案的最新動態（ID、網域、容器名），確保管理面板能即時顯示。
+
+---
+附註：日後若在維護更新或部署時有任何系統相關疑問，可以直接查閱上述的 `agent-context` 介面，或是要求檢視 Gateway 的原始碼。

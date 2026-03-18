@@ -343,9 +343,7 @@ const LogModal = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
-      fetch('/api/v1/spread-logs?limit=100', {
-        headers: { 'X-API-Key': 'dev_key' }
-      })
+      fetch('/api/v1/spread-logs?limit=100')
         .then(res => res.json())
         .then(data => {
           setLogs(data.logs || []);
@@ -403,6 +401,61 @@ const LogModal = ({ isOpen, onClose }) => {
                 })}
               </tbody>
             </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Error Log Modal（API key 透過 header 傳送，不暴露於 URL）---
+const ErrorLogModal = ({ isOpen, onClose, apiKey }) => {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoading(true);
+    setError("");
+    const headers = apiKey ? { "X-API-Key": apiKey } : {};
+    fetch("/api/v1/error-logs?limit=200", { headers })
+      .then(res => {
+        if (res.status === 401) throw new Error("需要有效的 API Key");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => { setLogs(data.logs || []); setLoading(false); })
+      .catch(err => { setError(err.message); setLoading(false); });
+  }, [isOpen, apiKey]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden flex flex-col max-h-[80vh]">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 via-orange-500 to-rose-500" />
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-rose-400" />
+            爬蟲錯誤日誌 (Error Logs)
+          </h2>
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X className="w-6 h-6" /></button>
+        </div>
+        <div className="p-0 overflow-y-auto flex-1 bg-slate-950 font-mono text-xs text-slate-300">
+          {loading ? (
+            <div className="p-8 text-center text-slate-500">載入中...</div>
+          ) : error ? (
+            <div className="p-8 text-center text-rose-400">{error}</div>
+          ) : logs.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">目前無錯誤記錄</div>
+          ) : (
+            logs.map((log, i) => (
+              <div key={i} className={`px-4 py-1 border-b border-slate-900 ${log.includes("ERROR") ? "text-rose-300" : log.includes("WARNING") ? "text-amber-300" : "text-slate-400"}`}>
+                {log}
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -601,6 +654,7 @@ const DashboardSection = ({ adminKey }) => {
   const [prevMarketData, setPrevMarketData] = useState({});
   const [isConnected, setIsConnected] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
+  const [showErrorLogModal, setShowErrorLogModal] = useState(false);
   const marketDataRef = useRef({});
 
   const [resolvedApiKey, setResolvedApiKey] = useState(() => {
@@ -750,6 +804,7 @@ const DashboardSection = ({ adminKey }) => {
       </div>
 
       <LogModal isOpen={showLogModal} onClose={() => setShowLogModal(false)} />
+      <ErrorLogModal isOpen={showErrorLogModal} onClose={() => setShowErrorLogModal(false)} apiKey={resolvedApiKey} />
 
       {/* 第一排：市場概覽 (TradingView + USD/FX) */}
       <div className="flex items-center justify-between mb-4 max-w-[1440px] mx-auto">
@@ -763,15 +818,13 @@ const DashboardSection = ({ adminKey }) => {
               <FileText className="w-3 h-3" />
               價差記錄
             </button>
-            <a
-              href={`/api/v1/error-logs?limit=200${resolvedApiKey ? `&api_key=${resolvedApiKey}` : ""}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => setShowErrorLogModal(true)}
               className="text-[10px] bg-slate-800 hover:bg-slate-700 text-rose-400 px-2 py-1 rounded border border-slate-700 flex items-center gap-1 transition-colors"
             >
               <AlertTriangle className="w-3 h-3" />
-              錯誤 API
-            </a>
+              錯誤日誌
+            </button>
           </div>
         </div>
       </div>
@@ -1285,10 +1338,22 @@ const DocsSection = () => {
                   GET /api/v1/latest
                 </li>
                 <li
+                  onClick={() => scrollToSection("endpoint-history")}
+                  className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors"
+                >
+                  GET /api/v1/history
+                </li>
+                <li
                   onClick={() => scrollToSection("endpoint-metrics")}
                   className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors"
                 >
                   GET /api/v1/metrics
+                </li>
+                <li
+                  onClick={() => scrollToSection("endpoint-spread-logs")}
+                  className="pl-4 border-l-2 border-transparent text-slate-400 hover:text-white cursor-pointer hover:border-slate-600 transition-colors"
+                >
+                  GET /api/v1/spread-logs
                 </li>
                 <li
                   onClick={() => scrollToSection("endpoint-error-logs")}
@@ -1313,7 +1378,7 @@ const DocsSection = () => {
             <h1 id="intro" className="text-3xl font-bold text-white mb-6 scroll-mt-24">
               API 開發者文檔{" "}
               <span className="text-emerald-500 text-sm align-middle bg-emerald-500/10 px-2 py-1 rounded ml-2">
-                v2.9
+                v3.2.1
               </span>
             </h1>
             <p className="text-slate-400 text-lg mb-8">
@@ -1380,7 +1445,7 @@ const DocsSection = () => {
                 </div>
                 <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
                   <div className="text-purple-400 font-bold">VIX</div>
-                  <div className="text-xs text-slate-500">恐慧指數</div>
+                  <div className="text-xs text-slate-500">恐慌指數</div>
                 </div>
                 <div className="bg-slate-950 p-3 rounded border border-slate-800 text-center">
                   <div className="text-yellow-400 font-bold">GDX</div>
@@ -1417,18 +1482,18 @@ Authorization: Bearer YOUR_API_KEY`}
                     WebSocket Query
                   </div>
                   <pre className="text-sm text-slate-300 font-mono">
-                    {`ws://localhost:8000/ws/stream?api_key=YOUR_API_KEY`}
+                    {`wss://goldlab.cloud/ws/stream?api_key=YOUR_API_KEY`}
                   </pre>
                 </div>
               </div>
               <div className="mt-6 bg-slate-950 p-4 rounded border border-slate-800">
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  API Key 產生工具
+                  在 .env 設定 API Key
                 </div>
                 <pre className="text-sm text-slate-300 font-mono">
-                  {`python backend/tools/api_key_tool.py --count 3 --length 32 --prefix gl_
-
-API_KEYS=gl_xxx,gl_yyy,gl_zzz`}
+                  {`# .env (伺服器端設定，請勿公開)
+API_KEYS=your_key_1,your_key_2
+ADMIN_API_KEYS=your_admin_key`}
                 </pre>
               </div>
             </div>
@@ -1474,12 +1539,14 @@ API_KEYS=gl_xxx,gl_yyy,gl_zzz`}
                     </h4>
                     <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto">
                       {`{
-  "timestamp": 1709823456,
+  "version": "3.2.1",
+  "timestamp": 1709823456.789,
+  "request_id": "a1b2c3d4-...",
   "data": {
     "XAU-USD": {
       "symbol": "XAU-USD",
       "price": 2650.45,
-      "timestamp": 1709823454,
+      "timestamp": 1709823454.123,
       "sources": 8,
       "details": ["Binance", "BullionVault", "Sina Finance"],
       "fastest": "Binance",
@@ -1490,7 +1557,7 @@ API_KEYS=gl_xxx,gl_yyy,gl_zzz`}
     "XAG-USD": {
       "symbol": "XAG-USD",
       "price": 31.42,
-      "timestamp": 1709823454,
+      "timestamp": 1709823454.123,
       "sources": 6,
       "details": ["GoldPrice.org", "Sina Finance"],
       "fastest": "Sina Finance",
@@ -1506,6 +1573,42 @@ API_KEYS=gl_xxx,gl_yyy,gl_zzz`}
               </div>
             </div>
 
+            <div id="endpoint-history" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">
+              <h2 className="text-xl font-bold text-white mb-4">
+                歷史資料查詢 (History)
+              </h2>
+              <p className="text-slate-400 mb-4">
+                查詢指定時間範圍內的歷史價格資料，保留最近 24 小時、最多 10,000 筆。
+              </p>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded text-sm font-bold border border-emerald-500/20">
+                  GET
+                </span>
+                <code className="text-slate-200 bg-slate-800 px-2 py-1 rounded">
+                  /api/v1/history?symbols=xau-usd&limit=300
+                </code>
+              </div>
+              <h4 className="font-bold text-white mt-6 mb-2">查詢參數 (Query Parameters)</h4>
+              <ul className="space-y-2 text-sm text-slate-400 mb-4">
+                <li><span className="text-slate-200 font-mono">symbols</span> (可選): 逗號分隔代碼，預設 xau-usd,xag-usd,usd-twd</li>
+                <li><span className="text-slate-200 font-mono">start</span> (可選): Unix 時間戳（秒），範圍起點</li>
+                <li><span className="text-slate-200 font-mono">end</span> (可選): Unix 時間戳（秒），範圍終點</li>
+                <li><span className="text-slate-200 font-mono">limit</span> (可選): 回傳筆數上限，預設 300，最大 5000</li>
+              </ul>
+              <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto">
+                {`{
+  "timestamp": 1709823456.789,
+  "request_id": "a1b2c3d4-...",
+  "data": {
+    "XAU-USD": [
+      { "symbol": "XAU-USD", "price": 2649.10, "timestamp": 1709820000.0, "sources": 7, ... },
+      { "symbol": "XAU-USD", "price": 2650.45, "timestamp": 1709823454.1, "sources": 8, ... }
+    ]
+  }
+}`}
+              </pre>
+            </div>
+
             <div id="rate-limits" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">
               <h2 className="text-xl font-bold text-white mb-4">認證與限制</h2>
               <ul className="text-sm text-slate-400 space-y-2">
@@ -1518,7 +1621,7 @@ API_KEYS=gl_xxx,gl_yyy,gl_zzz`}
                 <li>
                   WebSocket：
                   <span className="font-mono text-slate-200">
-                    ws://localhost:8000/ws/stream?api_key=&lt;YOUR_API_KEY&gt;
+                    wss://goldlab.cloud/ws/stream?api_key=&lt;YOUR_API_KEY&gt;
                   </span>
                 </li>
                 <li>Rate Limit：預設每分鐘 120 次 + 30 次突發</li>
@@ -1567,13 +1670,34 @@ API_KEYS=gl_xxx,gl_yyy,gl_zzz`}
               </pre>
             </div>
 
+            <div id="endpoint-spread-logs" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">
+              <h2 className="text-xl font-bold text-white mb-4">
+                現貨合約價差記錄 (Spread Logs)
+              </h2>
+              <p className="text-slate-400 mb-4">
+                取得現貨（XAU-USD / XAG-USD）與幣安合約（XAU-USDT / XAG-USDT）價差超過 1% 的記錄，每 15 秒檢查一次。
+              </p>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded text-sm font-bold border border-emerald-500/20">
+                  GET
+                </span>
+                <code className="text-slate-200 bg-slate-800 px-2 py-1 rounded">
+                  /api/v1/spread-logs?limit=100
+                </code>
+              </div>
+              <h4 className="font-bold text-white mt-6 mb-2">查詢參數 (Query Parameters)</h4>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li><span className="text-slate-200 font-mono">limit</span> (可選): 回傳行數上限，預設 100。</li>
+              </ul>
+            </div>
+
             <div id="endpoint-error-logs" className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12 scroll-mt-24">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <AlertTriangle className="text-rose-400 w-5 h-5" />
                 爬蟲錯誤日誌 (Error Logs)
               </h2>
               <p className="text-slate-400 mb-4">
-                取得最近的爬蟲與連線錯誤詳細記錄 (含程式碼層級的 Traceback)。方便用於遠端 Debug 排錯。
+                取得最近的爬蟲與連線錯誤記錄，方便遠端 Debug 排錯。
               </p>
               <div className="flex items-center gap-3 mb-4">
                 <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded text-sm font-bold border border-emerald-500/20">
@@ -1583,13 +1707,17 @@ API_KEYS=gl_xxx,gl_yyy,gl_zzz`}
                   /api/v1/error-logs?limit=200
                 </code>
               </div>
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3 mb-4 text-sm text-amber-300 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>此端點需要有效的 <code className="font-mono">X-API-Key</code>，不支援匿名存取（HTTP 401）。</span>
+              </div>
               <h4 className="font-bold text-white mt-6 mb-2">
                 查詢參數 (Query Parameters)
               </h4>
               <ul className="space-y-2 text-sm text-slate-400">
                 <li>
                   <span className="text-slate-200 font-mono">limit</span> (可選):
-                  日誌獲取行數限制 (預設為 200)。
+                  日誌獲取行數限制 (預設為 200，最大 5000)。
                 </li>
               </ul>
             </div>
@@ -1602,55 +1730,39 @@ API_KEYS=gl_xxx,gl_yyy,gl_zzz`}
                 連線後會訂閱所有資產頻道，伺服器會推送各資產的最新聚合結果，包含 is_market_open 欄位。
               </p>
               <pre className="bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-sm text-slate-300 overflow-x-auto">
-                {`ws://localhost:8000/ws/stream?api_key=YOUR_API_KEY
+                {`// 建議使用 Header 傳遞 API Key（避免 URL 記錄洩漏）
+// 若必須使用 query string，請確保 TLS 加密
+wss://goldlab.cloud/ws/stream?api_key=YOUR_API_KEY
 
 // 伺服器推送範例
 {
   "symbol": "XAU-USD",
   "price": 2650.45,
-  "timestamp": 1709823454,
+  "timestamp": 1709823454.123,
   "sources": 8,
   "details": ["Binance", "BullionVault"],
   "fastest": "Binance",
   "fastestLatency": 42.3,
-  "avgLatency": 88.4
-}`}
+  "avgLatency": 88.4,
+  "is_market_open": true
+}
+
+// Keep-alive ping（每 30 秒）
+{ "type": "ping" }`}
               </pre>
             </div>
 
             <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800 mb-12">
-              <h2 className="text-xl font-bold text-white mb-4">管理端 API</h2>
+              <h2 className="text-xl font-bold text-white mb-3">管理端 API</h2>
+              <div className="bg-slate-800/60 border border-slate-700 rounded-lg px-4 py-2 mb-4 text-xs text-slate-400">
+                以下端點僅供服務管理員使用，需搭配 <code className="font-mono text-slate-200">ADMIN_API_KEYS</code> 驗證，一般 API Key 無效。
+              </div>
               <ul className="text-sm text-slate-400 space-y-2">
-                <li>
-                  <span className="font-mono text-slate-200">
-                    GET /api/v1/admin/keys
-                  </span>{" "}
-                  列出 key 狀態
-                </li>
-                <li>
-                  <span className="font-mono text-slate-200">
-                    POST /api/v1/admin/keys/add
-                  </span>{" "}
-                  新增 Redis key
-                </li>
-                <li>
-                  <span className="font-mono text-slate-200">
-                    POST /api/v1/admin/keys/remove
-                  </span>{" "}
-                  移除 Redis key
-                </li>
-                <li>
-                  <span className="font-mono text-slate-200">
-                    POST /api/v1/admin/keys/disable
-                  </span>{" "}
-                  停用 key
-                </li>
-                <li>
-                  <span className="font-mono text-slate-200">
-                    POST /api/v1/admin/keys/enable
-                  </span>{" "}
-                  啟用 key
-                </li>
+                <li><span className="font-mono text-slate-200">GET /api/v1/admin/keys</span> — 列出所有 key 與狀態</li>
+                <li><span className="font-mono text-slate-200">POST /api/v1/admin/keys/add</span> — 新增 key（Redis 暫存）</li>
+                <li><span className="font-mono text-slate-200">POST /api/v1/admin/keys/remove</span> — 移除 Redis key</li>
+                <li><span className="font-mono text-slate-200">POST /api/v1/admin/keys/disable</span> — 停用 key</li>
+                <li><span className="font-mono text-slate-200">POST /api/v1/admin/keys/enable</span> — 啟用 key</li>
               </ul>
             </div>
           </div>
@@ -1672,7 +1784,7 @@ const AdminSection = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:8000/api/v1/admin/keys", {
+      const res = await fetch("/api/v1/admin/keys", {
         headers: { "X-API-Key": adminKey },
       });
       if (!res.ok) {
@@ -1695,7 +1807,7 @@ const AdminSection = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:8000/api/v1/admin/keys/add", {
+      const res = await fetch("/api/v1/admin/keys/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1720,7 +1832,7 @@ const AdminSection = () => {
     setError("");
     try {
       const res = await fetch(
-        "http://localhost:8000/api/v1/admin/keys/remove",
+        "/api/v1/admin/keys/remove",
         {
           method: "POST",
           headers: {
@@ -1747,8 +1859,8 @@ const AdminSection = () => {
     setError("");
     try {
       const endpoint = disable
-        ? "http://localhost:8000/api/v1/admin/keys/disable"
-        : "http://localhost:8000/api/v1/admin/keys/enable";
+        ? "/api/v1/admin/keys/disable"
+        : "/api/v1/admin/keys/enable";
       const res = await fetch(endpoint, {
         method: "POST",
         headers: {

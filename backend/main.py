@@ -11,6 +11,10 @@ from backend.auth import verify_api_key, verify_ws_api_key, verify_admin_api_key
 import logging
 import asyncio
 import os
+import uuid
+import json
+import time
+import aiofiles
 from logging.handlers import RotatingFileHandler
 
 settings = get_settings()
@@ -34,7 +38,6 @@ app = FastAPI(title=settings.APP_NAME)
 # Middleware: Request ID
 @app.middleware("http")
 async def request_id_middleware(request: Request, call_next):
-    import uuid
     request_id = str(uuid.uuid4())
     request.state.request_id = request_id
     response = await call_next(request)
@@ -42,17 +45,18 @@ async def request_id_middleware(request: Request, call_next):
     return response
 
 origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()]
+# allow_credentials=True is incompatible with wildcard origin (violates CORS spec)
+_allow_credentials = "*" not in origins
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Mount uploads directory
-import os
 os.makedirs("backend/static/uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="backend/static/uploads"), name="uploads")
 
@@ -101,13 +105,13 @@ async def startup_event():
         BullionVaultSource(),      # 6. BullionVault (黃金)
         YahooFinanceSource(),      # 7. Yahoo Finance (全部)
         KitcoSource(),             # 8. Kitco (黃金、白銀)
-        investing_source,          # 7. Investing.com (全部，Playwright)
-        OandaSource(),             # 8. OANDA (外匯)
-        TaiwanBankSource(),        # 9. 台灣銀行 (USD-TWD 官方備援)
-        ExchangerateHostSource(),  # 10. exchangerate.host (USD-TWD)
-        OpenErApiSource(),         # 11. open.er-api.com (USD-TWD)
-        FawazahmedSource(),        # 12. Fawaz API (USD-TWD CDN)
-        FloatRatesSource(),        # 13. FloatRates (USD-TWD)
+        investing_source,          # 9. Investing.com (全部，Playwright)
+        OandaSource(),             # 10. OANDA (外匯)
+        TaiwanBankSource(),        # 11. 台灣銀行 (USD-TWD 官方備援)
+        ExchangerateHostSource(),  # 12. exchangerate.host (USD-TWD)
+        OpenErApiSource(),         # 13. open.er-api.com (USD-TWD)
+        FawazahmedSource(),        # 14. Fawaz API (USD-TWD CDN)
+        FloatRatesSource(),        # 15. FloatRates (USD-TWD)
         # MockSource(name="Mock"),   # 14. Mock (已移除，確保全真實數據)
     ]
     
@@ -150,7 +154,6 @@ async def root():
 @app.get("/api/v1/latest")
 async def get_latest(request: Request, symbols: str = "xau-usd,xag-usd,usd-twd,paxg-usd,gc-f,si-f,xag-usdt", api_key: str = Depends(verify_api_key)):
     """獲取最新匯率數據"""
-    import json
     result = {}
     for symbol in symbols.upper().split(","):
         symbol = symbol.strip()
@@ -159,7 +162,7 @@ async def get_latest(request: Request, symbols: str = "xau-usd,xag-usd,usd-twd,p
         data = await redis_client.get(f"market:latest:{symbol}")
         if data:
             result[symbol] = json.loads(data)
-    return {"version": "3.2.1", "timestamp": __import__('time').time(), "data": result, "request_id": request.state.request_id}
+    return {"version": "3.2.1", "timestamp": time.time(), "data": result, "request_id": request.state.request_id}
 
 
 @app.get("/api/v1/history")
@@ -169,12 +172,11 @@ async def get_history(
     end: Optional[float] = None,
     limit: int = 300,
     api_key: str = Depends(verify_api_key),
-    request: Request = None, # Injected by FastAPI despite default
+    request: Request = None,  # Injected by FastAPI despite default
 ):
     """獲取歷史資料（Redis sorted set）"""
-    import json
     limit = max(1, min(5000, int(limit)))
-    now_ts = __import__('time').time()
+    now_ts = time.time()
     result = {}
 
     for symbol in symbols.upper().split(","):
@@ -206,9 +208,9 @@ async def get_history(
                         result[symbol].append(json.loads(r))
                 except (ValueError, json.JSONDecodeError):
                     # Fallback or skip
-                     try:
+                    try:
                         result[symbol].append(json.loads(r))
-                     except:
+                    except Exception:
                         pass
 
     return {"timestamp": now_ts, "data": result, "request_id": request.state.request_id}
@@ -222,7 +224,6 @@ async def get_metrics(api_key: str = Depends(verify_api_key)):
 @app.get("/api/v1/spread-logs")
 async def get_spread_logs(limit: int = 100, api_key: str = Depends(verify_api_key)):
     """獲取價差記錄"""
-    import os
     log_file = "logs/spreads.log"
     if not os.path.exists(log_file):
         return {"logs": []}
@@ -240,7 +241,6 @@ async def get_spread_logs(limit: int = 100, api_key: str = Depends(verify_api_ke
 @app.get("/api/v1/error-logs")
 async def get_error_logs(limit: int = 200, api_key: str = Depends(verify_api_key)):
     """獲取爬蟲錯誤記錄"""
-    import os
     log_file = "logs/fetch_errors.log"
     if not os.path.exists(log_file):
         return {"logs": []}
@@ -323,10 +323,6 @@ async def remove_key(payload: AdminKeyPayload, admin_key: str = Depends(verify_a
 @app.post("/api/v1/upload")
 async def upload_image(file: UploadFile = File(...), admin_key: str = Depends(verify_admin_api_key)):
     """上傳圖片 (僅限管理員)"""
-    import shutil
-    import uuid
-    import aiofiles
-    
     # 1. Validate extension
     allowed_extensions = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
     ext = os.path.splitext(file.filename)[1].lower()
