@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find C:git_workFlashRates -maxdepth 2 -type f \\\\\\(-name *.json -o -name *.ts -o -name *.js -o -name *.py -o -name *.md \\\\\\) ! -path */.venv/* ! -path */.pytest_cache/* ! -path */.git/* ! -path */.gemini/*)",
+      "Bash(find /c/git_work/FlashRates -maxdepth 3 -type f \\\\\\(-name *.json -o -name *.ts -o -name *.tsx -o -name *.js -o -name *.py -o -name *.md \\\\\\) ! -path */.venv/* ! -path */node_modules/* ! -path */.pytest_cache/* ! -path */.git/* ! -path */.gemini/*)",
+      "Bash(wc -l /c/git_work/FlashRates/backend/sources/*.py /c/git_work/FlashRates/backend/*.py)",
+      "Bash(wc -l /c/git_work/FlashRates/frontend/src/*.jsx /c/git_work/FlashRates/frontend/src/**/*.jsx)",
+      "Bash(python:*)",
+      "WebFetch(domain:goldlab.cloud)",
+      "Bash(curl:*)"
+    ]
+  }
+}
