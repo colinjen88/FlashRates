@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import TradingViewWidget from "./components/TradingViewWidget";
 import {
   Activity,
   Zap,
@@ -629,25 +630,6 @@ const AssetCard = React.memo(({
   );
 });
 
-// TradingView Widget Component (Iframe Method)
-// TradingView Widget Component (Iframe Method) - Now accepts type
-const TradingViewWidget = React.memo(({ type }) => {
-  let src = "/tv-gold.html";
-  if (type === "silver") src = "/tv-silver.html";
-  if (type === "usdtwd") src = "/tv-usdtwd.html";
-
-  return (
-    <div className="w-full h-[260px] bg-slate-900 ring-1 ring-slate-800 rounded-xl overflow-hidden shadow-2xl">
-      <iframe
-        src={src}
-        className="w-full h-full border-none overflow-hidden bg-transparent"
-        title={`TradingView Widget ${type}`}
-        scrolling="no"
-        allow="encrypted-media"
-      />
-    </div>
-  );
-});
 
 const DashboardSection = ({ adminKey }) => {
   const [marketData, setMarketData] = useState({});
@@ -832,7 +814,7 @@ const DashboardSection = ({ adminKey }) => {
       <div className="flex flex-col lg:flex-row gap-6 max-w-[1440px] mx-auto mb-8">
         {/* 1. TradingView USD-TWD (Fixed 360px) */}
         <div className="w-full lg:w-[360px] lg:shrink-0 ring-1 ring-emerald-600 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-          <TradingViewWidget type="usdtwd" />
+          <TradingViewWidget symbol="FX_IDC:USDTWD" />
         </div>
 
         {/* Remaining items distribute width */}
@@ -904,7 +886,7 @@ const DashboardSection = ({ adminKey }) => {
       </div>
       <div className="flex flex-col lg:flex-row gap-6 max-w-[1440px] mx-auto mb-8">
         <div className="w-full lg:w-[360px] lg:shrink-0 ring-1 ring-emerald-600 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-          <TradingViewWidget type="gold" />
+          <TradingViewWidget symbol="OANDA:XAUUSD" />
         </div>
 
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -975,7 +957,7 @@ const DashboardSection = ({ adminKey }) => {
       </div>
       <div className="flex flex-col lg:flex-row gap-6 max-w-[1440px] mx-auto mb-16">
         <div className="w-full lg:w-[360px] lg:shrink-0 ring-1 ring-emerald-600 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-          <TradingViewWidget type="silver" />
+          <TradingViewWidget symbol="OANDA:XAGUSD" />
         </div>
 
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
