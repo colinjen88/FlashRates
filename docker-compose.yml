@@ -35,8 +35,9 @@ services:
     container_name: goldlab-cloud-frontend
     restart: always
     labels:
-      caddy: http://goldlab.cloud
+      caddy: goldlab.cloud:80
       caddy.reverse_proxy: "{{upstreams 80}}"
+      caddy.reverse_proxy.header_up: X-Forwarded-Proto https
     volumes:
       - ./frontend/dist:/usr/share/nginx/html
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf

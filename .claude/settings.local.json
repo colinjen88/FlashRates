@@ -7,7 +7,10 @@
       "Bash(wc -l /c/git_work/FlashRates/frontend/src/*.jsx /c/git_work/FlashRates/frontend/src/**/*.jsx)",
       "Bash(python:*)",
       "WebFetch(domain:goldlab.cloud)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }
